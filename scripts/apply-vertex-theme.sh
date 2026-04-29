@@ -60,6 +60,15 @@ sed -i \
     -e 's/program2.name("claude").description(`Claude Code/program2.name("vertex").description(`Vertex/' \
     "$CLI_MJS"
 
+# Remove Claude logo from banner (keep only Vertex logo)
+sed -i 's/const allLogo = \[\.\.\.LOGO_OPEN, "", \.\.\.LOGO_CLAUDE\];/const allLogo = [...LOGO_OPEN];/' "$CLI_MJS"
+
+# Replace thinking colors (gray -> green)
+sed -i \
+    -e 's/THINKING_INACTIVE = {r: 153, g: 153, b: 153}/THINKING_INACTIVE = {r: 0, g: 200, b: 100}/' \
+    -e 's/THINKING_INACTIVE_SHIMMER = {r: 185, g: 185, b: 185}/THINKING_INACTIVE_SHIMMER = {r: 0, g: 255, b: 136}/' \
+    "$CLI_MJS"
+
 # Replace "OpenClaude" with "Vertex" (careful: semantic)
 sed -i 's/OpenClaude/Vertex/g' "$CLI_MJS"
 
