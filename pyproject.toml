@@ -3,11 +3,26 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "free-claude-code"
-version = "2.0.0"
-description = "Middleware between Claude Code CLI (Anthropic API) and NVIDIA NIM"
+name = "vertex-deepseek"
+version = "1.0.0"
+description = "Vertex — DeepSeek-native proxy for Claude Code CLI"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
+keywords = ["deepseek", "claude-code", "anthropic", "proxy", "vertex"]
+license = { text = "MIT" }
+authors = [
+    { name = "Vertex Contributors", email = "alvaro209890@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Build Tools",
+]
 dependencies = [
     "fastapi[standard]>=0.136.1",
     "uvicorn>=0.46.0",
@@ -24,9 +39,14 @@ dependencies = [
     "aiohttp>=3.13.4",
 ]
 
+[project.urls]
+Homepage = "https://github.com/alvaro209890/Vertex"
+Repository = "https://github.com/alvaro209890/Vertex.git"
+Issues = "https://github.com/alvaro209890/Vertex/issues"
+
 [project.scripts]
-free-claude-code = "cli.entrypoints:serve"
-fcc-init = "cli.entrypoints:init"
+vertex = "cli.entrypoints:serve"
+vertex-init = "cli.entrypoints:init"
 
 [project.optional-dependencies]
 voice = [

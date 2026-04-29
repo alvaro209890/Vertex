@@ -2,80 +2,54 @@
 
 # 🔷 Vertex
 
-DeepSeek-native proxy for Claude Code CLI. Routes Anthropic Messages API traffic exclusively to DeepSeek models.
+DeepSeek-native proxy for Claude Code CLI.
 
-[Quick Start](#quick-start) · [Clients](#connect-claude-code) · [Development](#development)
+```bash
+pip install vertex-deepseek
+vertex-init    # first run: prompts for your DeepSeek API key
+vertex         # start the proxy
+```
 
 </div>
 
 ## What You Get
 
-- Drop-in proxy for Claude Code's Anthropic API calls.
-- DeepSeek-native backend with Anthropic-compatible Messages API.
-- Per-model routing: Opus → v4-pro, Sonnet/Haiku → v4-flash.
-- Streaming, tool use, reasoning/thinking block handling.
+- One-command setup: `pip install vertex-deepseek` then `vertex`
+- First run prompts for your DeepSeek API key interactively
+- Drop-in proxy for Claude Code's Anthropic API calls
+- DeepSeek-native backend with Anthropic-compatible Messages API
+- Per-model routing: Opus → v4-pro, Sonnet/Haiku → v4-flash
+- Streaming, tool use, reasoning/thinking block handling
+- Change API key anytime: `vertex --logout`
 
 ## Quick Start
 
-### 1. Install Requirements
-
-Install [Claude Code](https://github.com/anthropics/claude-code), then install `uv` and Python 3.14.
-
-macOS/Linux:
+### 1. Install Vertex
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv self update
-uv python install 3.14
+pip install vertex-deepseek
 ```
 
-Windows PowerShell:
+Requires Python 3.12+ and [Claude Code](https://github.com/anthropics/claude-code).
 
-```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-uv self update
-uv python install 3.14
-```
-
-### 2. Clone And Configure
+### 2. Configure
 
 ```bash
-git clone git@github.com:alvaro209890/Vertex.git
-cd Vertex
-cp .env.example .env
+vertex-init
 ```
 
-PowerShell uses:
+This creates `~/.config/vertex/.env` and asks for your DeepSeek API key.
+Get one at [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys).
 
-```powershell
-Copy-Item .env.example .env
-```
-
-Edit `.env` and choose one provider. For the default NVIDIA NIM path:
-
-```dotenv
-NVIDIA_NIM_API_KEY="nvapi-your-key"
-MODEL="nvidia_nim/z-ai/glm4.7"
-ANTHROPIC_AUTH_TOKEN="freecc"
-```
-
-Use any local secret for `ANTHROPIC_AUTH_TOKEN`; Claude Code will send the same value back to this proxy. Leave it empty only for local/private testing.
+To change the key later: `vertex --logout`
 
 ### 3. Start The Proxy
 
 ```bash
-uv run uvicorn server:app --host 0.0.0.0 --port 8082
-```
-
-Package install alternative:
-
-```bash
-uv tool install git+ssh://git@github.com/alvaro209890/Vertex.git
-vertex-init
 vertex
 ```
 
-`vertex-init` creates `~/.config/vertex/.env` from the bundled template.
+That's it. The proxy starts on `0.0.0.0:8082`.
 
 ### 4. Run Claude Code
 
