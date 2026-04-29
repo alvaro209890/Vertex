@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vertex-deepseek"
-version = "1.0.0"
+version = "1.0.1"
 description = "Vertex — DeepSeek-native proxy for Claude Code CLI"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -86,7 +86,7 @@ dev = [
 ]
 
 [tool.ruff]
-target-version = "py314"
+target-version = "py312"
 line-length = 88
 
 [tool.ruff.lint]

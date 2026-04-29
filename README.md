@@ -5,7 +5,7 @@
 DeepSeek-native proxy for Claude Code CLI.
 
 ```bash
-pip install vertex-deepseek
+pipx install vertex-deepseek
 vertex-init    # first run: prompts for your DeepSeek API key
 vertex         # start the proxy
 ```
@@ -14,7 +14,7 @@ vertex         # start the proxy
 
 ## What You Get
 
-- One-command setup: `pip install vertex-deepseek` then `vertex`
+- One-command setup: `pipx install vertex-deepseek` then `vertex`
 - First run prompts for your DeepSeek API key interactively
 - Drop-in proxy for Claude Code's Anthropic API calls
 - DeepSeek-native backend with Anthropic-compatible Messages API
@@ -26,9 +26,24 @@ vertex         # start the proxy
 
 ### 1. Install Vertex
 
+**macOS / Linux (recommended):**
+```bash
+pipx install vertex-deepseek
+```
+
+**Linux (Ubuntu/Debian) — install pipx first if needed:**
+```bash
+sudo apt install pipx
+pipx ensurepath
+pipx install vertex-deepseek
+```
+
+**Alternative (any OS with virtualenv):**
 ```bash
 pip install vertex-deepseek
 ```
+> Ubuntu 24.04+ blocks `pip install` outside a virtualenv (PEP 668).
+> Use `pipx` instead, or create a venv first.
 
 Requires Python 3.12+ and [Claude Code](https://github.com/anthropics/claude-code).
 
