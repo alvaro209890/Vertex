@@ -119,4 +119,5 @@ fi
 echo ""
 echo "✓ Vertex theme applied successfully!"
 echo "  Run: vertex"
+echo "  Change API key: vertex --logout"
 echo ""

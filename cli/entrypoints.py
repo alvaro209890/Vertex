@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import os
+import sys
 from pathlib import Path
+
+CONFIG_DIR = Path.home() / ".config" / "vertex"
+ENV_FILE = CONFIG_DIR / ".env"
 
 
 def _load_env_template() -> str:
@@ -20,12 +25,47 @@ def _load_env_template() -> str:
     raise FileNotFoundError("Could not find bundled or source .env.example template.")
 
 
+def _needs_api_key() -> bool:
+    """Check whether DEEPSEEK_API_KEY is missing or empty."""
+    from dotenv import dotenv_values
+
+    if os.environ.get("DEEPSEEK_API_KEY", "").strip():
+        return False
+    if ENV_FILE.is_file():
+        values = dotenv_values(ENV_FILE)
+        if values.get("DEEPSEEK_API_KEY", "").strip():
+            return False
+    return True
+
+
+def _run_wizard_if_needed() -> None:
+    """Run the setup wizard when DEEPSEEK_API_KEY is not configured."""
+    if not _needs_api_key():
+        return
+    from cli.setup_wizard import run_setup_wizard
+
+    run_setup_wizard(ENV_FILE)
+
+
 def serve() -> None:
     """Start the FastAPI server (registered as `vertex` script)."""
+    # Handle logout / re-login request
+    if "--logout" in sys.argv or "/logout" in sys.argv:
+        if ENV_FILE.exists():
+            from cli.setup_wizard import run_setup_wizard
+
+            run_setup_wizard(ENV_FILE)
+            print("API key updated. Restart Vertex to apply changes.")
+            return
+        print("No config found. Run: vertex-init")
+        return
+
     import uvicorn
 
     from cli.process_registry import kill_all_best_effort
     from config.settings import get_settings
+
+    _run_wizard_if_needed()
 
     settings = get_settings()
     try:
@@ -43,18 +83,22 @@ def serve() -> None:
 
 def init() -> None:
     """Scaffold config at ~/.config/vertex/.env (registered as `vertex-init`)."""
-    config_dir = Path.home() / ".config" / "vertex"
-    env_file = config_dir / ".env"
-
-    if env_file.exists():
-        print(f"Config already exists at {env_file}")
+    if ENV_FILE.exists():
+        print(f"Config already exists at {ENV_FILE}")
         print("Delete it first if you want to reset to defaults.")
         return
 
-    config_dir.mkdir(parents=True, exist_ok=True)
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     template = _load_env_template()
-    env_file.write_text(template, encoding="utf-8")
-    print(f"Config created at {env_file}")
-    print(
-        "Edit it to set your API keys and model preferences, then run: vertex"
-    )
+    ENV_FILE.write_text(template, encoding="utf-8")
+    print(f"Config created at {ENV_FILE}")
+
+    from cli.setup_wizard import prompt_deepseek_api_key, save_key_to_env
+
+    answer = input("Set your DeepSeek API key now? [Y/n]: ").strip().lower()
+    if answer in ("", "y", "yes"):
+        key = prompt_deepseek_api_key()
+        save_key_to_env(ENV_FILE, key)
+        print("\n✓ API key saved. Run: vertex")
+    else:
+        print("\nEdit the file later to set DEEPSEEK_API_KEY, then run: vertex")
