@@ -15,41 +15,26 @@ from .services import ClaudeProxyService
 router = APIRouter()
 
 
-SUPPORTED_CLAUDE_MODELS = [
+AVAILABLE_MODEL_OPTIONS = [
     ModelResponse(
-        id="claude-opus-4-20250514",
-        display_name="Claude Opus 4",
-        created_at="2025-05-14T00:00:00Z",
+        id="deepseek/deepseek-v4-pro",
+        display_name="DeepSeek V4 Pro",
+        created_at="2026-04-29T00:00:00Z",
     ),
     ModelResponse(
-        id="claude-sonnet-4-20250514",
-        display_name="Claude Sonnet 4",
-        created_at="2025-05-14T00:00:00Z",
+        id="deepseek/deepseek-v4-flash",
+        display_name="DeepSeek V4 Flash",
+        created_at="2026-04-29T00:00:00Z",
     ),
     ModelResponse(
-        id="claude-haiku-4-20250514",
-        display_name="Claude Haiku 4",
-        created_at="2025-05-14T00:00:00Z",
+        id="deepseek/deepseek-chat",
+        display_name="DeepSeek Chat (deprecated 2026/07/24)",
+        created_at="2026-04-29T00:00:00Z",
     ),
     ModelResponse(
-        id="claude-3-opus-20240229",
-        display_name="Claude 3 Opus",
-        created_at="2024-02-29T00:00:00Z",
-    ),
-    ModelResponse(
-        id="claude-3-5-sonnet-20241022",
-        display_name="Claude 3.5 Sonnet",
-        created_at="2024-10-22T00:00:00Z",
-    ),
-    ModelResponse(
-        id="claude-3-haiku-20240307",
-        display_name="Claude 3 Haiku",
-        created_at="2024-03-07T00:00:00Z",
-    ),
-    ModelResponse(
-        id="claude-3-5-haiku-20241022",
-        display_name="Claude 3.5 Haiku",
-        created_at="2024-10-22T00:00:00Z",
+        id="deepseek/deepseek-reasoner",
+        display_name="DeepSeek Reasoner (deprecated 2026/07/24)",
+        created_at="2026-04-29T00:00:00Z",
     ),
 ]
 
@@ -140,12 +125,12 @@ async def probe_health():
 
 @router.get("/v1/models", response_model=ModelsListResponse)
 async def list_models(_auth=Depends(require_api_key)):
-    """List the Claude model ids this proxy advertises for compatibility."""
+    """List model ids this proxy can route."""
     return ModelsListResponse(
-        data=SUPPORTED_CLAUDE_MODELS,
-        first_id=SUPPORTED_CLAUDE_MODELS[0].id if SUPPORTED_CLAUDE_MODELS else None,
+        data=AVAILABLE_MODEL_OPTIONS,
+        first_id=AVAILABLE_MODEL_OPTIONS[0].id if AVAILABLE_MODEL_OPTIONS else None,
         has_more=False,
-        last_id=SUPPORTED_CLAUDE_MODELS[-1].id if SUPPORTED_CLAUDE_MODELS else None,
+        last_id=AVAILABLE_MODEL_OPTIONS[-1].id if AVAILABLE_MODEL_OPTIONS else None,
     )
 
 

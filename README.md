@@ -121,9 +121,9 @@ provider_id/model/name
 
 | Provider | Prefix | Transport | Key | Default base URL |
 | --- | --- | --- | --- | --- |
+| DeepSeek | `deepseek/...` | Anthropic Messages | `DEEPSEEK_API_KEY` | `https://api.deepseek.com/anthropic` |
 | NVIDIA NIM | `nvidia_nim/...` | OpenAI chat translation | `NVIDIA_NIM_API_KEY` | `https://integrate.api.nvidia.com/v1` |
 | OpenRouter | `open_router/...` | Anthropic Messages | `OPENROUTER_API_KEY` | `https://openrouter.ai/api/v1` |
-| DeepSeek | `deepseek/...` | Anthropic Messages | `DEEPSEEK_API_KEY` | `https://api.deepseek.com/anthropic` |
 | LM Studio | `lmstudio/...` | Anthropic Messages | none | `http://localhost:1234/v1` |
 | llama.cpp | `llamacpp/...` | Anthropic Messages | none | `http://localhost:8080/v1` |
 | Ollama | `ollama/...` | Anthropic Messages | none | `http://localhost:11434` |
@@ -170,8 +170,14 @@ Get a key at [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_
 
 ```dotenv
 DEEPSEEK_API_KEY="your-deepseek-key"
-MODEL="deepseek/deepseek-chat"
+MODEL="deepseek/deepseek-v4-pro"
 ```
+
+Available models:
+- `deepseek/deepseek-v4-pro` — Full reasoning (thinking mode)
+- `deepseek/deepseek-v4-flash` — Fast responses (non-thinking mode)
+- `deepseek/deepseek-chat` — Legacy (deprecated 2026/07/24 → maps to v4-flash)
+- `deepseek/deepseek-reasoner` — Legacy (deprecated 2026/07/24 → maps to v4-flash thinking)
 
 This provider uses DeepSeek's Anthropic-compatible endpoint, not the OpenAI chat-completions endpoint.
 

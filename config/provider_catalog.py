@@ -21,8 +21,6 @@ OPENROUTER_DEFAULT_BASE = "https://openrouter.ai/api/v1"
 LMSTUDIO_DEFAULT_BASE = "http://localhost:1234/v1"
 LLAMACPP_DEFAULT_BASE = "http://localhost:8080/v1"
 OLLAMA_DEFAULT_BASE = "http://localhost:11434"
-
-
 @dataclass(frozen=True, slots=True)
 class ProviderDescriptor:
     """Metadata for building :class:`~providers.base.ProviderConfig` and factory wiring."""

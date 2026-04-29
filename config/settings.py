@@ -1,5 +1,7 @@
 """Centralized configuration using Pydantic Settings."""
 
+from __future__ import annotations
+
 import os
 from collections.abc import Mapping
 from functools import lru_cache
@@ -432,6 +434,11 @@ class Settings(BaseSettings):
         Classifies the incoming Claude model (opus/sonnet/haiku) and
         returns the model-specific override if configured, otherwise the fallback MODEL.
         """
+        if "/" in claude_model_name:
+            provider = Settings.parse_provider_type(claude_model_name)
+            if provider in SUPPORTED_PROVIDER_IDS:
+                return claude_model_name
+
         name_lower = claude_model_name.lower()
         if "opus" in name_lower and self.model_opus is not None:
             return self.model_opus
