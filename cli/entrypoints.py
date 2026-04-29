@@ -47,6 +47,87 @@ def _run_wizard_if_needed() -> None:
     run_setup_wizard(ENV_FILE)
 
 
+def cli() -> None:
+    """Launch Vertex CLI: start proxy in background, then open OpenClaude CLI."""
+    import subprocess
+    import time
+
+    _run_wizard_if_needed()
+
+    # Handle logout
+    if "--logout" in sys.argv or "/logout" in sys.argv:
+        if ENV_FILE.exists():
+            from cli.setup_wizard import run_setup_wizard
+
+            run_setup_wizard(ENV_FILE)
+            print("API key updated.")
+            return
+        print("No config found. Run: vertex-init")
+        return
+
+    # Check if proxy is already running
+    import urllib.request
+
+    proxy_ready = False
+    try:
+        urllib.request.urlopen("http://127.0.0.1:8082/health", timeout=1)
+        proxy_ready = True
+    except Exception:
+        pass
+
+    # Start proxy in background if not running
+    if not proxy_ready:
+        print("Starting Vertex proxy...")
+        subprocess.Popen(
+            [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "api.app:create_app",
+                "--factory",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8082",
+                "--log-level",
+                "warning",
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        # Wait for proxy to be ready
+        for _ in range(10):
+            time.sleep(1)
+            try:
+                urllib.request.urlopen("http://127.0.0.1:8082/health", timeout=1)
+                proxy_ready = True
+                break
+            except Exception:
+                continue
+
+        if not proxy_ready:
+            print("Warning: Proxy may not have started. Check port 8082.")
+
+    # Launch OpenClaude CLI
+    openclaude_cmd = "openclaude"
+    if os.access("/usr/local/bin/openclaude", os.X_OK):
+        openclaude_cmd = "/usr/local/bin/openclaude"
+    elif os.access("/usr/bin/openclaude", os.X_OK):
+        openclaude_cmd = "/usr/bin/openclaude"
+
+    try:
+        os.execvp(openclaude_cmd, [openclaude_cmd, *sys.argv[1:]])
+    except FileNotFoundError:
+        print("Error: OpenClaude CLI not found.")
+        print("Install it first: npm install -g @gitlawb/openclaude")
+        print()
+        print("Or use the one-command installer:")
+        print(
+            "  curl -fsSL https://raw.githubusercontent.com/alvaro209890/Vertex/main/scripts/install-vertex.sh | bash"
+        )
+        sys.exit(1)
+
+
 def serve() -> None:
     """Start the FastAPI server (registered as `vertex` script)."""
     # Handle logout / re-login request

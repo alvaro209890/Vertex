@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "vertex-deepseek"
-version = "1.0.1"
+version = "1.1.0"
 description = "Vertex — DeepSeek-native proxy for Claude Code CLI"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -45,7 +45,8 @@ Repository = "https://github.com/alvaro209890/Vertex.git"
 Issues = "https://github.com/alvaro209890/Vertex/issues"
 
 [project.scripts]
-vertex = "cli.entrypoints:serve"
+vertex = "cli.entrypoints:cli"
+vertex-proxy = "cli.entrypoints:serve"
 vertex-init = "cli.entrypoints:init"
 
 [project.optional-dependencies]
