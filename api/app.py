@@ -38,8 +38,8 @@ def create_app() -> FastAPI:
     )
 
     app = FastAPI(
-        title="Claude Code Proxy",
-        version="2.0.0",
+        title="Vertex - DeepSeek Proxy",
+        version="1.0.0",
         lifespan=lifespan,
     )
 

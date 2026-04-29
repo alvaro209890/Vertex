@@ -1,35 +1,19 @@
 <div align="center">
 
-# 🤖 Free Claude Code
+# 🔷 Vertex
 
-Use Claude Code CLI, VS Code, JetBrains ACP, or chat bots through your own Anthropic-compatible proxy.
+DeepSeek-native proxy for Claude Code CLI. Routes Anthropic Messages API traffic exclusively to DeepSeek models.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Python 3.14](https://img.shields.io/badge/python-3.14-3776ab.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json&style=for-the-badge)](https://github.com/astral-sh/uv)
-[![Tested with Pytest](https://img.shields.io/badge/testing-Pytest-00c0ff.svg?style=for-the-badge)](https://github.com/Alishahryar1/free-claude-code/actions/workflows/tests.yml)
-[![Type checking: Ty](https://img.shields.io/badge/type%20checking-ty-ffcc00.svg?style=for-the-badge)](https://pypi.org/project/ty/)
-[![Code style: Ruff](https://img.shields.io/badge/code%20formatting-ruff-f5a623.svg?style=for-the-badge)](https://github.com/astral-sh/ruff)
-[![Logging: Loguru](https://img.shields.io/badge/logging-loguru-4ecdc4.svg?style=for-the-badge)](https://github.com/Delgan/loguru)
+[Quick Start](#quick-start) · [Clients](#connect-claude-code) · [Development](#development)
 
-Free Claude Code routes Anthropic Messages API traffic from Claude Code to NVIDIA NIM, OpenRouter, DeepSeek, LM Studio, llama.cpp, or Ollama. It keeps Claude Code's client-side protocol stable while letting you choose free, paid, or local models.
-
-[Quick Start](#quick-start) · [Providers](#choose-a-provider) · [Clients](#connect-claude-code) · [Troubleshooting](#troubleshooting) · [Development](#development)
-
-</div>
-
-<div align="center">
-  <img src="pic.png" alt="Free Claude Code in action" width="700">
 </div>
 
 ## What You Get
 
 - Drop-in proxy for Claude Code's Anthropic API calls.
-- Six provider backends: NVIDIA NIM, OpenRouter, DeepSeek, LM Studio, llama.cpp, and Ollama.
-- Per-model routing: send Opus, Sonnet, Haiku, and fallback traffic to different providers.
-- Streaming, tool use, reasoning/thinking block handling, and local request optimizations.
-- Optional Discord or Telegram bot wrapper for remote coding sessions.
-- Optional voice-note transcription through local Whisper or NVIDIA NIM.
+- DeepSeek-native backend with Anthropic-compatible Messages API.
+- Per-model routing: Opus → v4-pro, Sonnet/Haiku → v4-flash.
+- Streaming, tool use, reasoning/thinking block handling.
 
 ## Quick Start
 
@@ -56,8 +40,8 @@ uv python install 3.14
 ### 2. Clone And Configure
 
 ```bash
-git clone https://github.com/Alishahryar1/free-claude-code.git
-cd free-claude-code
+git clone git@github.com:alvaro209890/Vertex.git
+cd Vertex
 cp .env.example .env
 ```
 
@@ -86,12 +70,12 @@ uv run uvicorn server:app --host 0.0.0.0 --port 8082
 Package install alternative:
 
 ```bash
-uv tool install git+https://github.com/Alishahryar1/free-claude-code.git
-fcc-init
-free-claude-code
+uv tool install git+ssh://git@github.com/alvaro209890/Vertex.git
+vertex-init
+vertex
 ```
 
-`fcc-init` creates `~/.config/free-claude-code/.env` from the bundled template.
+`vertex-init` creates `~/.config/vertex/.env` from the bundled template.
 
 ### 4. Run Claude Code
 
@@ -475,7 +459,7 @@ Claude Code CLI / IDE
         |
         | Anthropic Messages API
         v
-Free Claude Code proxy (:8082)
+Vertex proxy (:8082)
         |
         | provider-specific request/stream adapter
         v
@@ -522,8 +506,8 @@ Run them in that order before pushing. CI enforces the same checks.
 
 `pyproject.toml` installs:
 
-- `free-claude-code`: starts the proxy with configured host and port.
-- `fcc-init`: creates the user config template at `~/.config/free-claude-code/.env`.
+- `vertex`: starts the proxy with configured host and port.
+- `vertex-init`: creates the user config template at `~/.config/vertex/.env`.
 
 ### Extending
 

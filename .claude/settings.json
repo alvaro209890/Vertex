@@ -1,0 +1,16 @@
+{
+  "theme": {
+    "name": "Vertex Green",
+    "primary": "#00ff88",
+    "secondary": "#00cc66",
+    "background": "#0a1a0f",
+    "surface": "#112b1a",
+    "border": "#1a4a2c",
+    "text": "#e0ffe8",
+    "textSecondary": "#88cc99",
+    "error": "#ff5555",
+    "warning": "#ffaa33",
+    "success": "#00ff88",
+    "info": "#66ddff"
+  }
+}
