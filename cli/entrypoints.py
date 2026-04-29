@@ -95,8 +95,7 @@ def cli() -> None:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        # Wait for proxy to be ready
-        for _ in range(10):
+        for _ in range(15):
             time.sleep(1)
             try:
                 urllib.request.urlopen("http://127.0.0.1:8082/health", timeout=1)
@@ -108,16 +107,11 @@ def cli() -> None:
         if not proxy_ready:
             print("Warning: Proxy may not have started. Check port 8082.")
 
-    # Launch OpenClaude CLI
-    openclaude_cmd = "openclaude"
-    if os.access("/usr/local/bin/openclaude", os.X_OK):
-        openclaude_cmd = "/usr/local/bin/openclaude"
-    elif os.access("/usr/bin/openclaude", os.X_OK):
-        openclaude_cmd = "/usr/bin/openclaude"
+    # Find openclaude binary
+    import shutil
 
-    try:
-        os.execvp(openclaude_cmd, [openclaude_cmd, *sys.argv[1:]])
-    except FileNotFoundError:
+    openclaude_bin = shutil.which("openclaude")
+    if not openclaude_bin:
         print("Error: OpenClaude CLI not found.")
         print("Install it first: npm install -g @gitlawb/openclaude")
         print()
@@ -125,6 +119,20 @@ def cli() -> None:
         print(
             "  curl -fsSL https://raw.githubusercontent.com/alvaro209890/Vertex/main/scripts/install-vertex.sh | bash"
         )
+        sys.exit(1)
+
+    # Pass env vars so openclaude connects to our proxy
+    env = os.environ.copy()
+    env.setdefault("ANTHROPIC_BASE_URL", "http://127.0.0.1:8082")
+    env.setdefault("ANTHROPIC_AUTH_TOKEN", "freecc")
+
+    # Launch OpenClaude CLI (runs in foreground, replaces our process)
+    print("Launching Vertex CLI...")
+    try:
+        proc = subprocess.run([openclaude_bin, *sys.argv[1:]], env=env)
+        sys.exit(proc.returncode)
+    except FileNotFoundError:
+        print(f"Error: OpenClaude binary not found at {openclaude_bin}")
         sys.exit(1)
 
 
