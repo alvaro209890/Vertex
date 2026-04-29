@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# vertex — CLI entrypoint (alias for OpenClaude with Vertex theme)
+# Usage: vertex [args...]
+#
+# Installed globally via:
+#   npm install -g @gitlawb/openclaude
+#   ln -s $(which openclaude) $(dirname $(which openclaude))/vertex
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="${VERTEX_ENV_FILE:-$SCRIPT_DIR/.env}"
+PORT="${VERTEX_PORT:-8082}"
+
+if command -v vertex >/dev/null 2>&1 && [ "$(command -v vertex)" != "$0" ] && [ "$(command -v vertex)" != "$(realpath "$0")" ]; then
+    exec vertex "$@"
+fi
+
+if command -v openclaude >/dev/null 2>&1; then
+    export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-http://127.0.0.1:$PORT}"
+    exec openclaude "$@"
+fi
+
+echo "Error: Vertex requires OpenClaude to be installed."
+echo "Install: npm install -g @gitlawb/openclaude"
+exit 1
