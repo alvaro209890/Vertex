@@ -11,17 +11,11 @@ CONFIG_DIR = Path.home() / ".config" / "vertex"
 ENV_FILE = CONFIG_DIR / ".env"
 VERTEX_CLI_CONFIG_DIR = Path.home() / ".vertex"
 VERTEX_CLI_SETTINGS_FILE = VERTEX_CLI_CONFIG_DIR / "settings.json"
-DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
-MANAGED_VERTEX_CLI_ENV = {
+DEFAULT_MODEL = "nvidia_nim/z-ai/glm4.7"
+MANAGED_VERTEX_CLI_ENV_BASE = {
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:{port}",
     "ANTHROPIC_AUTH_TOKEN": "freecc",
     "DISABLE_LOGIN_COMMAND": "1",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek/deepseek-v4-flash",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "DeepSeek V4 Flash",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek/deepseek-v4-flash",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "DeepSeek V4 Flash",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek/deepseek-v4-flash",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": "DeepSeek V4 Flash",
 }
 API_AUTH_COMMANDS = {
     ("auth", "login"),
@@ -52,19 +46,69 @@ def _load_env_template() -> str:
     raise FileNotFoundError("Could not find bundled or source .env.example template.")
 
 
-def _needs_api_key() -> bool:
-    """Check whether DEEPSEEK_API_KEY is missing or empty."""
+def _load_runtime_env_values() -> dict[str, str]:
+    """Load env values in the same order used by Settings."""
     from dotenv import dotenv_values
 
-    if ENV_FILE.is_file():
-        values = dotenv_values(ENV_FILE)
-        if _env_value_is_set(values.get("DEEPSEEK_API_KEY")):
-            return False
-    return True
+    files = [ENV_FILE, Path(".env")]
+    if explicit := os.environ.get("VERTEX_ENV_FILE"):
+        files.append(Path(explicit))
+
+    values: dict[str, str] = {}
+    for env_file in files:
+        if env_file.is_file():
+            for key, value in dotenv_values(env_file).items():
+                values[key] = "" if value is None else value
+
+    return {**values, **os.environ}
+
+
+def _configured_model_values() -> dict[str, str]:
+    """Return model defaults that the vendored CLI should advertise."""
+    values = _load_runtime_env_values()
+    fallback = values.get("MODEL") or DEFAULT_MODEL
+    return {
+        "default": fallback,
+        "opus": values.get("MODEL_OPUS") or fallback,
+        "sonnet": values.get("MODEL_SONNET") or fallback,
+        "haiku": values.get("MODEL_HAIKU") or fallback,
+    }
+
+
+def _display_model_name(model_ref: str) -> str:
+    """Return a compact model display name for vendored CLI settings."""
+    if "/" not in model_ref:
+        return model_ref
+    provider, model_name = model_ref.split("/", 1)
+    return f"{provider}: {model_name}"
+
+
+def _credential_env_for_model(model_ref: str) -> str | None:
+    """Return the credential env var required by a configured model, if any."""
+    if "/" not in model_ref:
+        return "DEEPSEEK_API_KEY"
+
+    from config.provider_catalog import PROVIDER_CATALOG
+
+    provider_id = model_ref.split("/", 1)[0]
+    descriptor = PROVIDER_CATALOG.get(provider_id)
+    if descriptor is None:
+        return "DEEPSEEK_API_KEY"
+    return descriptor.credential_env
+
+
+def _needs_api_key() -> bool:
+    """Check whether the configured provider credential is missing or empty."""
+    values = _load_runtime_env_values()
+    model_ref = values.get("MODEL") or DEFAULT_MODEL
+    credential_env = _credential_env_for_model(model_ref)
+    if credential_env is None:
+        return False
+    return not _env_value_is_set(values.get(credential_env))
 
 
 def _run_wizard_if_needed() -> None:
-    """Run the setup wizard when DEEPSEEK_API_KEY is not configured."""
+    """Run the setup wizard when the configured provider key is not configured."""
     if not _needs_api_key():
         return
     from cli.setup_wizard import run_setup_wizard
@@ -73,7 +117,7 @@ def _run_wizard_if_needed() -> None:
 
 
 def _is_api_key_setup_request(argv: list[str] | None = None) -> bool:
-    """Return whether CLI args request DeepSeek API key setup."""
+    """Return whether CLI args request provider API key setup."""
     args = list(sys.argv[1:] if argv is None else argv[1:])
     lowered = [arg.lower() for arg in args]
     if any(arg in API_AUTH_FLAGS for arg in lowered):
@@ -98,7 +142,7 @@ def _is_api_key_status_request(argv: list[str] | None = None) -> bool:
 
 
 def _handle_api_key_setup_request(*, restart_message: bool) -> bool:
-    """Handle login/logout aliases with the only supported login: DeepSeek API key."""
+    """Handle login/logout aliases with provider API-key setup."""
     if not _is_api_key_setup_request():
         return False
 
@@ -106,9 +150,9 @@ def _handle_api_key_setup_request(*, restart_message: bool) -> bool:
 
     run_setup_wizard(ENV_FILE)
     if restart_message:
-        print("DeepSeek API key updated. Restart Vertex to apply changes.")
+        print("Provider API key updated. Restart Vertex to apply changes.")
     else:
-        print("DeepSeek API key updated.")
+        print("Provider API key updated.")
     return True
 
 
@@ -117,20 +161,20 @@ def _handle_disabled_anthropic_token_setup() -> bool:
     if not _is_anthropic_token_setup_request():
         return False
     print("Anthropic account login is disabled in Vertex.")
-    print("Use `vertex /logout` or `vertex auth login` to set a DeepSeek API key.")
+    print("Use `vertex /logout` or `vertex auth login` to set a provider API key.")
     return True
 
 
 def _handle_api_key_status_request() -> bool:
-    """Report DeepSeek API key status without invoking Anthropic auth status."""
+    """Report configured provider API-key status without invoking Anthropic auth status."""
     if not _is_api_key_status_request():
         return False
 
-    from dotenv import dotenv_values
-
-    configured = False
-    if ENV_FILE.is_file():
-        configured = _env_value_is_set(dotenv_values(ENV_FILE).get("DEEPSEEK_API_KEY"))
+    values = _load_runtime_env_values()
+    model_ref = values.get("MODEL") or DEFAULT_MODEL
+    provider_id = model_ref.split("/", 1)[0] if "/" in model_ref else "deepseek"
+    credential_env = _credential_env_for_model(model_ref)
+    configured = credential_env is None or _env_value_is_set(values.get(credential_env))
 
     if "--json" in sys.argv:
         import json
@@ -139,18 +183,44 @@ def _handle_api_key_status_request() -> bool:
             json.dumps(
                 {
                     "loggedIn": configured,
-                    "authMethod": "deepseek_api_key" if configured else "none",
-                    "apiProvider": "deepseek",
+                    "authMethod": "provider_api_key" if configured else "none",
+                    "apiProvider": provider_id,
+                    "credentialEnv": credential_env,
                 },
                 indent=2,
             )
         )
     elif configured:
-        print("DeepSeek API key: configured")
+        if credential_env is None:
+            print(f"{provider_id} provider: no API key required")
+        else:
+            print(f"{credential_env}: configured")
     else:
-        print("DeepSeek API key: not configured")
-        print("Run `vertex auth login` to set a DeepSeek API key.")
+        print(f"{credential_env}: not configured")
+        print("Run `vertex auth login` to set a provider API key.")
     return True
+
+
+def _managed_vertex_cli_env(port: str) -> dict[str, str]:
+    """Return environment values that force the vendored CLI through Vertex."""
+    models = _configured_model_values()
+    env = {
+        key: value.format(port=port)
+        for key, value in MANAGED_VERTEX_CLI_ENV_BASE.items()
+    }
+    env.update(
+        {
+            "ANTHROPIC_DEFAULT_OPUS_MODEL": models["opus"],
+            "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": _display_model_name(models["opus"]),
+            "ANTHROPIC_DEFAULT_SONNET_MODEL": models["sonnet"],
+            "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": _display_model_name(
+                models["sonnet"]
+            ),
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL": models["haiku"],
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": _display_model_name(models["haiku"]),
+        }
+    )
+    return env
 
 
 def _ensure_vertex_cli_settings(port: str) -> None:
@@ -170,14 +240,13 @@ def _ensure_vertex_cli_settings(port: str) -> None:
 
     raw_env = settings.get("env")
     env: dict[str, Any] = dict(raw_env) if isinstance(raw_env, dict) else {}
-    env.update(
-        {key: value.format(port=port) for key, value in MANAGED_VERTEX_CLI_ENV.items()}
-    )
+    env.update(_managed_vertex_cli_env(port))
+    models = _configured_model_values()
     settings.update(
         {
             "env": env,
             "skipDangerousModePermissionPrompt": True,
-            "model": DEFAULT_MODEL,
+            "model": models["default"],
         }
     )
     for key in (
@@ -190,13 +259,6 @@ def _ensure_vertex_cli_settings(port: str) -> None:
     VERTEX_CLI_SETTINGS_FILE.write_text(
         json.dumps(settings, indent=2) + "\n", encoding="utf-8"
     )
-
-
-def _managed_vertex_cli_env(port: str) -> dict[str, str]:
-    """Return environment values that force the vendored CLI through Vertex."""
-    return {
-        key: value.format(port=port) for key, value in MANAGED_VERTEX_CLI_ENV.items()
-    }
 
 
 def _vertex_cli_bin() -> Path:
@@ -365,12 +427,11 @@ def init() -> None:
     ENV_FILE.write_text(template, encoding="utf-8")
     print(f"Config created at {ENV_FILE}")
 
-    from cli.setup_wizard import prompt_deepseek_api_key, save_key_to_env
+    from cli.setup_wizard import run_setup_wizard
 
-    answer = input("Set your DeepSeek API key now? [Y/n]: ").strip().lower()
+    answer = input("Set a provider API key now? [Y/n]: ").strip().lower()
     if answer in ("", "y", "yes"):
-        key = prompt_deepseek_api_key()
-        save_key_to_env(ENV_FILE, key)
+        run_setup_wizard(ENV_FILE)
         print("\n✓ API key saved. Run: vertex")
     else:
-        print("\nEdit the file later to set DEEPSEEK_API_KEY, then run: vertex")
+        print("\nEdit the file later to set provider API credentials, then run: vertex")

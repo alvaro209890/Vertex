@@ -17,6 +17,21 @@ router = APIRouter()
 
 AVAILABLE_MODEL_OPTIONS = [
     ModelResponse(
+        id="claude-opus-4-20250514",
+        display_name="Claude Opus 4",
+        created_at="2025-05-14T00:00:00Z",
+    ),
+    ModelResponse(
+        id="claude-sonnet-4-20250514",
+        display_name="Claude Sonnet 4",
+        created_at="2025-05-14T00:00:00Z",
+    ),
+    ModelResponse(
+        id="claude-3-5-haiku-20241022",
+        display_name="Claude 3.5 Haiku",
+        created_at="2024-10-22T00:00:00Z",
+    ),
+    ModelResponse(
         id="deepseek/deepseek-v4-pro",
         display_name="DeepSeek V4 Pro",
         created_at="2026-04-29T00:00:00Z",

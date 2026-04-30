@@ -44,6 +44,11 @@ def get_user_facing_error_message(
     if name == "OverloadedError":
         return "Provider is currently overloaded. Please retry."
     if name == "APIError":
+        if status_code == 402:
+            return (
+                "Provider billing or quota is unavailable. Check credits, billing, "
+                "or switch the configured provider/model."
+            )
         if status_code in (502, 503, 504):
             return "Provider is temporarily unavailable. Please retry."
         return "Provider API request failed."

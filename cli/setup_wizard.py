@@ -1,7 +1,8 @@
-"""First-run setup wizard — prompts for DeepSeek API key interactively."""
+"""First-run setup wizard for provider API keys and model routing."""
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 GREEN = "\033[92m"
@@ -9,67 +10,156 @@ RESET = "\033[0m"
 BOLD = "\033[1m"
 
 
+@dataclass(frozen=True, slots=True)
+class ProviderSetupOption:
+    """Interactive setup option for a remotely hosted provider."""
+
+    provider_id: str
+    display_name: str
+    credential_env: str
+    default_model: str
+    key_url: str
+    enable_thinking: bool = False
+
+
+PROVIDER_SETUP_OPTIONS: tuple[ProviderSetupOption, ...] = (
+    ProviderSetupOption(
+        provider_id="nvidia_nim",
+        display_name="NVIDIA NIM",
+        credential_env="NVIDIA_NIM_API_KEY",
+        default_model="nvidia_nim/z-ai/glm4.7",
+        key_url="https://build.nvidia.com/settings/api-keys",
+    ),
+    ProviderSetupOption(
+        provider_id="deepseek",
+        display_name="DeepSeek",
+        credential_env="DEEPSEEK_API_KEY",
+        default_model="deepseek/deepseek-v4-flash",
+        key_url="https://platform.deepseek.com/api_keys",
+    ),
+    ProviderSetupOption(
+        provider_id="open_router",
+        display_name="OpenRouter",
+        credential_env="OPENROUTER_API_KEY",
+        default_model="open_router/stepfun/step-3.5-flash:free",
+        key_url="https://openrouter.ai/keys",
+    ),
+)
+DEFAULT_SETUP_OPTION = PROVIDER_SETUP_OPTIONS[0]
+
+
 def _banner() -> None:
     """Print the branded Vertex setup banner."""
     print()
     print(f"{GREEN}{'=' * 54}{RESET}")
-    print(f"{GREEN}  Welcome to Vertex — DeepSeek Proxy for Claude Code{RESET}")
+    print(f"{GREEN}  Welcome to Vertex — Local Proxy for Claude Code{RESET}")
     print(f"{GREEN}{'=' * 54}{RESET}")
     print()
-    print("You need a DeepSeek API key to use Vertex.")
-    print("Get one at: https://platform.deepseek.com/api_keys")
+    print("Choose the provider key Vertex should use for chat requests.")
     print()
 
 
-def prompt_deepseek_api_key() -> str:
-    """Prompt user interactively for a DeepSeek API key."""
+def prompt_provider_option() -> ProviderSetupOption:
+    """Prompt user for a provider setup option."""
+    print("Available providers:")
+    for idx, option in enumerate(PROVIDER_SETUP_OPTIONS, start=1):
+        default = " (default)" if option == DEFAULT_SETUP_OPTION else ""
+        print(f"  {idx}. {option.display_name}{default}")
+    print()
+
     while True:
-        key = input(f"{BOLD}DeepSeek API key:{RESET} ").strip()
+        answer = input(f"{BOLD}Provider [1]:{RESET} ").strip()
+        if not answer:
+            return DEFAULT_SETUP_OPTION
+        if answer.isdigit():
+            index = int(answer)
+            if 1 <= index <= len(PROVIDER_SETUP_OPTIONS):
+                return PROVIDER_SETUP_OPTIONS[index - 1]
+        print("  Invalid option. Choose one of the listed numbers.")
+
+
+def prompt_provider_api_key(option: ProviderSetupOption) -> str:
+    """Prompt user interactively for the selected provider API key."""
+    print(f"Get a {option.display_name} key at: {option.key_url}")
+    while True:
+        key = input(f"{BOLD}{option.display_name} API key:{RESET} ").strip()
         if not key:
             print("  Key cannot be empty. Try again.")
             continue
         return key
 
 
+def prompt_deepseek_api_key() -> str:
+    """Prompt user interactively for a DeepSeek API key."""
+    deepseek = next(
+        option for option in PROVIDER_SETUP_OPTIONS if option.provider_id == "deepseek"
+    )
+    return prompt_provider_api_key(deepseek)
+
+
+def _write_env_updates(env_path: Path, updates: dict[str, str]) -> None:
+    """Write or update a small set of dotenv assignments."""
+    env_path.parent.mkdir(parents=True, exist_ok=True)
+    desired = {key: f'{key}="{value}"' for key, value in updates.items()}
+
+    if not env_path.exists():
+        body = "\n".join(desired.values())
+        env_path.write_text(f"# Vertex Proxy\n{body}\n", encoding="utf-8")
+        return
+
+    lines = env_path.read_text(encoding="utf-8").splitlines()
+    seen: set[str] = set()
+    new_lines: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        key = stripped.split("=", 1)[0] if "=" in stripped else ""
+        if key in desired:
+            new_lines.append(desired[key])
+            seen.add(key)
+        else:
+            new_lines.append(line)
+
+    for key, line in desired.items():
+        if key not in seen:
+            new_lines.append(line)
+
+    env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+
+
+def save_provider_config_to_env(
+    env_path: Path,
+    option: ProviderSetupOption,
+    api_key: str,
+) -> None:
+    """Write or update the provider credential and model routing in the env file."""
+    updates = {
+        option.credential_env: api_key,
+        "MODEL": option.default_model,
+        "MODEL_OPUS": option.default_model,
+        "MODEL_SONNET": option.default_model,
+        "MODEL_HAIKU": option.default_model,
+        "ENABLE_MODEL_THINKING": "true" if option.enable_thinking else "false",
+    }
+    _write_env_updates(env_path, updates)
+
+
 def save_key_to_env(env_path: Path, api_key: str) -> None:
     """Write or update DEEPSEEK_API_KEY in the env file."""
-    env_path.parent.mkdir(parents=True, exist_ok=True)
-
-    key_line = f'DEEPSEEK_API_KEY="{api_key}"'
-
-    if env_path.exists():
-        content = env_path.read_text(encoding="utf-8")
-        if "DEEPSEEK_API_KEY" in content:
-            lines = content.splitlines()
-            new_lines = []
-            replaced = False
-            for ln in lines:
-                if ln.strip().startswith("DEEPSEEK_API_KEY"):
-                    new_lines.append(key_line)
-                    replaced = True
-                else:
-                    new_lines.append(ln)
-            if not replaced:
-                new_lines.append(key_line)
-            env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-        else:
-            env_path.write_text(
-                content.rstrip() + f"\n{key_line}\n",
-                encoding="utf-8",
-            )
-    else:
-        env_path.write_text(
-            f"# Vertex — DeepSeek Proxy\n{key_line}\n",
-            encoding="utf-8",
-        )
+    deepseek = next(
+        option for option in PROVIDER_SETUP_OPTIONS if option.provider_id == "deepseek"
+    )
+    _write_env_updates(env_path, {deepseek.credential_env: api_key})
 
 
 def run_setup_wizard(env_path: Path) -> str:
     """Run the interactive setup wizard. Returns the API key."""
     _banner()
-    api_key = prompt_deepseek_api_key()
-    save_key_to_env(env_path, api_key)
+    option = prompt_provider_option()
+    api_key = prompt_provider_api_key(option)
+    save_provider_config_to_env(env_path, option, api_key)
     print(f"\n{GREEN}✓ Key saved to {env_path}{RESET}")
+    print(f"  Provider: {option.display_name}")
+    print(f"  Model: {option.default_model}")
     print(f"  Run {GREEN}vertex --logout{RESET} to change it later.")
     print()
     return api_key

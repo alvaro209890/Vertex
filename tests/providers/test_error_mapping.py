@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import openai
 import pytest
-from httpx import ReadTimeout, Request, Response
+from httpx import HTTPStatusError, ReadTimeout, Request, Response
 
 from core.anthropic import (
     append_request_id,
@@ -108,6 +108,22 @@ class TestMapError:
         exc = ValueError("bad value")
         result = map_error(exc)
         assert result is exc
+
+    def test_http_402_maps_to_billing_message(self):
+        """HTTP 402 should explain provider billing/quota instead of generic API failure."""
+        request = Request("POST", "https://provider.test/messages")
+        response = Response(status_code=402, request=request, text="payment required")
+        exc = HTTPStatusError(
+            "payment required",
+            request=request,
+            response=response,
+        )
+
+        result = map_error(exc)
+
+        assert isinstance(result, APIError)
+        assert result.status_code == 402
+        assert "billing or quota" in get_user_facing_error_message(result)
 
 
 def test_user_facing_message_read_timeout_empty_string():

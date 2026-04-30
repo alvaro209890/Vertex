@@ -172,7 +172,7 @@ def test_cli_creates_default_vertex_settings(tmp_path: Path) -> None:
 
 
 def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
-    """cli() forces managed Vertex/DeepSeek settings over stale provider config."""
+    """cli() forces managed Vertex settings over stale provider config."""
     import json
     import sys
 
@@ -219,7 +219,7 @@ def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
     assert settings["env"]["ANTHROPIC_AUTH_TOKEN"] == "freecc"
     assert settings["env"]["DISABLE_LOGIN_COMMAND"] == "1"
     assert settings["env"]["OPENAI_API_KEY"] == "old-openai-key"
-    assert settings["model"] == "deepseek/deepseek-v4-flash"
+    assert settings["model"] == "nvidia_nim/test-model"
     assert settings["customSetting"] is True
     assert "provider" not in settings
 
@@ -238,7 +238,7 @@ def test_cli_logout_updates_deepseek_key_before_auto_wizard(tmp_path: Path) -> N
     with (
         patch.object(entrypoints, "ENV_FILE", env_file),
         patch.object(sys, "argv", ["vertex", "/logout"]),
-        patch("builtins.input", return_value="sk-new-deepseek"),
+        patch("builtins.input", side_effect=["2", "sk-new-deepseek"]),
         patch(
             "builtins.print",
             side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
@@ -249,7 +249,7 @@ def test_cli_logout_updates_deepseek_key_before_auto_wizard(tmp_path: Path) -> N
 
     run.assert_not_called()
     assert 'DEEPSEEK_API_KEY="sk-new-deepseek"' in env_file.read_text(encoding="utf-8")
-    assert "DeepSeek API key updated." in "\n".join(printed)
+    assert "Provider API key updated." in "\n".join(printed)
 
 
 def test_cli_auth_login_maps_to_deepseek_key_setup(tmp_path: Path) -> None:
@@ -265,7 +265,7 @@ def test_cli_auth_login_maps_to_deepseek_key_setup(tmp_path: Path) -> None:
     with (
         patch.object(entrypoints, "ENV_FILE", env_file),
         patch.object(sys, "argv", ["vertex", "auth", "login"]),
-        patch("builtins.input", return_value="sk-deepseek-next"),
+        patch("builtins.input", side_effect=["2", "sk-deepseek-next"]),
         patch("subprocess.run") as run,
     ):
         entrypoints.cli()
@@ -282,12 +282,16 @@ def test_cli_auth_status_reports_deepseek_key_status(tmp_path: Path) -> None:
 
     env_file = tmp_path / ".config" / "vertex" / ".env"
     env_file.parent.mkdir(parents=True)
-    env_file.write_text('DEEPSEEK_API_KEY="sk-configured"\n', encoding="utf-8")
+    env_file.write_text(
+        'MODEL="deepseek/deepseek-v4-flash"\nDEEPSEEK_API_KEY="sk-configured"\n',
+        encoding="utf-8",
+    )
     printed: list[str] = []
 
     with (
         patch.object(entrypoints, "ENV_FILE", env_file),
         patch.object(sys, "argv", ["vertex", "auth", "status"]),
+        patch.dict(os.environ, {"MODEL": "deepseek/deepseek-v4-flash"}, clear=False),
         patch(
             "builtins.print",
             side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
@@ -297,7 +301,7 @@ def test_cli_auth_status_reports_deepseek_key_status(tmp_path: Path) -> None:
         entrypoints.cli()
 
     run.assert_not_called()
-    assert "\n".join(printed) == "DeepSeek API key: configured"
+    assert "\n".join(printed) == "DEEPSEEK_API_KEY: configured"
 
 
 def test_cli_blocks_anthropic_setup_token() -> None:

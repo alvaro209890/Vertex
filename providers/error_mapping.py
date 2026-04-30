@@ -62,6 +62,12 @@ def map_error(
         status = e.response.status_code
         if status in (401, 403):
             return AuthenticationError(message, raw_error=str(e))
+        if status == 402:
+            return APIError(
+                "Provider billing or quota is unavailable.",
+                status_code=status,
+                raw_error=str(e),
+            )
         if status == 429:
             limiter.set_blocked(60)
             return RateLimitError(message, raw_error=str(e))
