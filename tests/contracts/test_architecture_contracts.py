@@ -54,6 +54,20 @@ def test_root_env_example_is_packaged_for_fcc_init() -> None:
     assert force_include[".env.example"] == "cli/env.example"
 
 
+def test_vendored_cli_runtime_package_excludes_node_modules() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    pyproject = tomllib.loads((repo_root / "pyproject.toml").read_text("utf-8"))
+
+    force_include = pyproject["tool"]["hatch"]["build"]["targets"]["wheel"][
+        "force-include"
+    ]
+
+    assert "vendor/vertex-cli" not in force_include
+    assert force_include["vendor/vertex-cli/bin"] == "vendor/vertex-cli/bin"
+    assert force_include["vendor/vertex-cli/dist"] == "vendor/vertex-cli/dist"
+    assert not any("node_modules" in path for path in force_include)
+
+
 def test_pyproject_first_party_packages_match_packaged_roots() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     pyproject = (repo_root / "pyproject.toml").read_text(encoding="utf-8")
