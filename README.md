@@ -83,62 +83,48 @@ vertex-proxy
 The default proxy URL is `http://127.0.0.1:8083`. Do not append `/v1` when
 pointing Anthropic-style clients at it.
 
-## Choose A Provider
+## Update Existing Installs
 
-Model values use this format:
+Use these commands on every PC where Vertex is already installed.
 
-```text
-provider_id/model/name
+If Vertex was installed with `pipx`:
+
+```bash
+pipx install --force git+https://github.com/alvaro209890/Vertex.git
+vertex auth login
+vertex auth status
 ```
 
-`MODEL` is the fallback. `MODEL_OPUS`, `MODEL_SONNET`, and `MODEL_HAIKU` override routing for requests that Claude Code sends for those tiers.
+If Vertex was cloned from GitHub:
+
+```bash
+cd /path/to/Vertex
+git pull origin main
+uv sync
+uv run vertex auth login
+uv run vertex auth status
+```
+
+`vertex auth login` stores the DeepSeek API key in the local machine config.
+Do not commit API keys to git. After updating, Vertex ignores non-DeepSeek
+`MODEL*` values and routes chat through DeepSeek only.
+
+## DeepSeek Only
+
+Vertex is configured to use DeepSeek only. Model values use this format:
+
+```text
+deepseek/model/name
+```
+
+`MODEL` is the fallback. `MODEL_OPUS`, `MODEL_SONNET`, and `MODEL_HAIKU`
+override routing for requests that Claude Code sends for those tiers, but only
+`deepseek/...` values are honored. Any non-DeepSeek model value is ignored by the
+runtime and replaced with `deepseek/deepseek-v4-flash`.
 
 | Provider | Prefix | Transport | Key | Default base URL |
 | --- | --- | --- | --- | --- |
 | DeepSeek | `deepseek/...` | Anthropic Messages | `DEEPSEEK_API_KEY` | `https://api.deepseek.com/anthropic` |
-| NVIDIA NIM | `nvidia_nim/...` | OpenAI chat translation | `NVIDIA_NIM_API_KEY` | `https://integrate.api.nvidia.com/v1` |
-| OpenRouter | `open_router/...` | Anthropic Messages | `OPENROUTER_API_KEY` | `https://openrouter.ai/api/v1` |
-| LM Studio | `lmstudio/...` | Anthropic Messages | none | `http://localhost:1234/v1` |
-| llama.cpp | `llamacpp/...` | Anthropic Messages | none | `http://localhost:8080/v1` |
-| Ollama | `ollama/...` | Anthropic Messages | none | `http://localhost:11434` |
-
-<details>
-<summary><b>NVIDIA NIM</b></summary>
-
-Get a key at [build.nvidia.com/settings/api-keys](https://build.nvidia.com/settings/api-keys).
-
-```dotenv
-NVIDIA_NIM_API_KEY="nvapi-your-key"
-MODEL="nvidia_nim/z-ai/glm4.7"
-```
-
-Popular examples:
-
-- `nvidia_nim/z-ai/glm4.7`
-- `nvidia_nim/z-ai/glm5`
-- `nvidia_nim/moonshotai/kimi-k2.5`
-- `nvidia_nim/minimaxai/minimax-m2.5`
-
-Browse models at [build.nvidia.com](https://build.nvidia.com/explore/discover). A cached model list is also kept in [`nvidia_nim_models.json`](nvidia_nim_models.json).
-
-</details>
-
-<details>
-<summary><b>OpenRouter</b></summary>
-
-Get a key at [openrouter.ai/keys](https://openrouter.ai/keys).
-
-```dotenv
-OPENROUTER_API_KEY="sk-or-your-key"
-MODEL="open_router/stepfun/step-3.5-flash:free"
-```
-
-Browse [all models](https://openrouter.ai/models) or [free models](https://openrouter.ai/collections/free-models).
-
-</details>
-
-<details>
-<summary><b>DeepSeek</b></summary>
 
 Get a key at [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys).
 
@@ -154,74 +140,6 @@ Available models:
 - `deepseek/deepseek-reasoner` — Legacy (deprecated 2026/07/24 → maps to v4-flash thinking)
 
 This provider uses DeepSeek's Anthropic-compatible endpoint, not the OpenAI chat-completions endpoint.
-
-</details>
-
-<details>
-<summary><b>LM Studio</b></summary>
-
-Start LM Studio's local server, load a model, then configure:
-
-```dotenv
-LM_STUDIO_BASE_URL="http://localhost:1234/v1"
-MODEL="lmstudio/your-loaded-model"
-```
-
-Use the model identifier shown by LM Studio. Prefer models with tool-use support for Claude Code workflows.
-
-</details>
-
-<details>
-<summary><b>llama.cpp</b></summary>
-
-Start `llama-server` with an Anthropic-compatible `/v1/messages` endpoint and enough context for Claude Code requests.
-
-```dotenv
-LLAMACPP_BASE_URL="http://localhost:8080/v1"
-MODEL="llamacpp/local-model"
-```
-
-For local coding models, context size matters. If llama.cpp returns HTTP 400 for normal Claude Code requests, increase `--ctx-size` and verify the model/server build supports the requested features.
-
-</details>
-
-<details>
-<summary><b>Ollama</b></summary>
-
-Run Ollama and pull a model:
-
-```bash
-ollama pull llama3.1
-ollama serve
-```
-
-Then configure the proxy. `OLLAMA_BASE_URL` is the Ollama server root; do not append `/v1`.
-
-```dotenv
-OLLAMA_BASE_URL="http://localhost:11434"
-MODEL="ollama/llama3.1"
-```
-
-Use the same tag shown by `ollama list`, for example `ollama/llama3.1:8b`.
-
-</details>
-
-<details>
-<summary><b>Mix providers by model tier</b></summary>
-
-Each tier can use a different provider:
-
-```dotenv
-NVIDIA_NIM_API_KEY="nvapi-your-key"
-OPENROUTER_API_KEY="sk-or-your-key"
-
-MODEL_OPUS="nvidia_nim/moonshotai/kimi-k2.5"
-MODEL_SONNET="open_router/deepseek/deepseek-r1-0528:free"
-MODEL_HAIKU="lmstudio/unsloth/GLM-4.7-Flash-GGUF"
-MODEL="nvidia_nim/z-ai/glm4.7"
-```
-
-</details>
 
 ## Connect External Anthropic Clients
 
@@ -318,22 +236,18 @@ Useful commands:
 
 ### Voice Notes
 
-Voice notes work on Discord and Telegram. Choose one backend:
+Voice notes work on Discord and Telegram with the local Whisper backend:
 
 ```bash
 uv sync --extra voice_local
-uv sync --extra voice
-uv sync --extra voice --extra voice_local
 ```
 
 ```dotenv
 VOICE_NOTE_ENABLED=true
-WHISPER_DEVICE="cpu"          # cpu | cuda | nvidia_nim
+WHISPER_DEVICE="cpu"          # cpu | cuda
 WHISPER_MODEL="base"
 HF_TOKEN=""
 ```
-
-Use `WHISPER_DEVICE="nvidia_nim"` with the `voice` extra and `NVIDIA_NIM_API_KEY` for NVIDIA-hosted transcription.
 
 ## Configuration Reference
 
@@ -342,36 +256,24 @@ Use `WHISPER_DEVICE="nvidia_nim"` with the `voice` extra and `NVIDIA_NIM_API_KEY
 ### Model Routing
 
 ```dotenv
-MODEL="nvidia_nim/z-ai/glm4.7"
-MODEL_OPUS=
-MODEL_SONNET=
-MODEL_HAIKU=
+MODEL="deepseek/deepseek-v4-flash"
+MODEL_OPUS="deepseek/deepseek-v4-flash"
+MODEL_SONNET="deepseek/deepseek-v4-flash"
+MODEL_HAIKU="deepseek/deepseek-v4-flash"
 ENABLE_MODEL_THINKING=true
 ENABLE_OPUS_THINKING=
 ENABLE_SONNET_THINKING=
 ENABLE_HAIKU_THINKING=
 ```
 
-Blank per-tier values inherit the fallback. Blank thinking overrides inherit `ENABLE_MODEL_THINKING`.
+Blank per-tier values inherit the fallback. Non-DeepSeek model values are ignored
+and replaced with `deepseek/deepseek-v4-flash`. Blank thinking overrides inherit
+`ENABLE_MODEL_THINKING`.
 
-### Provider Keys And URLs
+### Provider Key
 
 ```dotenv
-NVIDIA_NIM_API_KEY=""
-OPENROUTER_API_KEY=""
 DEEPSEEK_API_KEY=""
-LM_STUDIO_BASE_URL="http://localhost:1234/v1"
-LLAMACPP_BASE_URL="http://localhost:8080/v1"
-OLLAMA_BASE_URL="http://localhost:11434"
-```
-
-Proxy settings are per provider:
-
-```dotenv
-NVIDIA_NIM_PROXY=""
-OPENROUTER_PROXY=""
-LMSTUDIO_PROXY=""
-LLAMACPP_PROXY=""
 ```
 
 ### Rate Limits And Timeouts
@@ -404,7 +306,7 @@ Raw logging flags can expose prompts, tool arguments, paths, and model output. K
 ### Local Web Tools
 
 ```dotenv
-ENABLE_WEB_SERVER_TOOLS=true
+ENABLE_WEB_SERVER_TOOLS=false
 WEB_FETCH_ALLOWED_SCHEMES=http,https
 WEB_FETCH_ALLOW_PRIVATE_NETWORKS=false
 ```
@@ -421,24 +323,13 @@ Update to the latest commit first. Older versions could emit invalid usage metad
 - The proxy is returning Server-Sent Events for `/v1/messages`.
 - `server.log` contains no upstream 400/500 response before the malformed-response error.
 
-### llama.cpp or LM Studio returns HTTP 400
-
-This usually means the local runtime rejected the Anthropic Messages request before the proxy could stream a model answer.
-
-Check:
-
-- The local server supports `POST /v1/messages`.
-- The model and runtime support the requested context length and tools.
-- llama.cpp was started with enough `--ctx-size` for Claude Code prompts.
-- The configured base URL includes `/v1` for LM Studio and llama.cpp.
-
 ### Provider disconnects during streaming
 
-Errors like `incomplete chunked read`, `server disconnected`, or a peer closing the body usually come from the upstream provider or gateway. Reduce concurrency, raise timeouts, or retry later.
+Errors like `incomplete chunked read`, `server disconnected`, or a peer closing the body usually come from DeepSeek or the network path. Reduce concurrency, raise timeouts, or retry later.
 
 ### Tool calls work on one model but not another
 
-Tool support is model and provider dependent. Some OpenAI-compatible models emit malformed tool-call deltas, omit tool names, or return tool calls as plain text. Try another model or provider before assuming the proxy is broken.
+Tool support is model dependent. Some models emit malformed tool-call deltas, omit tool names, or return tool calls as plain text. Try another DeepSeek model before assuming the proxy is broken.
 
 ### The VS Code extension still shows a login screen
 
@@ -453,17 +344,17 @@ Vertex CLI / external Anthropic client
         v
 Vertex proxy (:8083)
         |
-        | provider-specific request/stream adapter
+        | DeepSeek request/stream adapter
         v
-NIM / OpenRouter / DeepSeek / LM Studio / llama.cpp / Ollama
+DeepSeek Anthropic Messages API
 ```
 
 Important pieces:
 
 - FastAPI exposes Anthropic-compatible routes such as `/v1/messages`, `/v1/messages/count_tokens`, and `/v1/models`.
 - Model routing resolves the Claude model name to `MODEL_OPUS`, `MODEL_SONNET`, `MODEL_HAIKU`, or `MODEL`.
-- NIM uses OpenAI chat streaming translated into Anthropic SSE.
-- OpenRouter, DeepSeek, LM Studio, llama.cpp, and Ollama use Anthropic Messages style transports.
+- Non-DeepSeek `MODEL*` values are ignored so installed clients cannot route chat to another provider.
+- DeepSeek uses Anthropic Messages style transport.
 - The proxy normalizes thinking blocks, tool calls, token usage metadata, and provider errors into the shape Claude Code expects.
 - Request optimizations answer trivial Claude Code probes locally to save latency and quota.
 

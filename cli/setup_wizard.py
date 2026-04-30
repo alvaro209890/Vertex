@@ -24,25 +24,11 @@ class ProviderSetupOption:
 
 PROVIDER_SETUP_OPTIONS: tuple[ProviderSetupOption, ...] = (
     ProviderSetupOption(
-        provider_id="nvidia_nim",
-        display_name="NVIDIA NIM",
-        credential_env="NVIDIA_NIM_API_KEY",
-        default_model="nvidia_nim/z-ai/glm4.7",
-        key_url="https://build.nvidia.com/settings/api-keys",
-    ),
-    ProviderSetupOption(
         provider_id="deepseek",
         display_name="DeepSeek",
         credential_env="DEEPSEEK_API_KEY",
         default_model="deepseek/deepseek-v4-flash",
         key_url="https://platform.deepseek.com/api_keys",
-    ),
-    ProviderSetupOption(
-        provider_id="open_router",
-        display_name="OpenRouter",
-        credential_env="OPENROUTER_API_KEY",
-        default_model="open_router/stepfun/step-3.5-flash:free",
-        key_url="https://openrouter.ai/keys",
     ),
 )
 DEFAULT_SETUP_OPTION = PROVIDER_SETUP_OPTIONS[0]
@@ -55,27 +41,13 @@ def _banner() -> None:
     print(f"{GREEN}  Welcome to Vertex — Local Proxy for Claude Code{RESET}")
     print(f"{GREEN}{'=' * 54}{RESET}")
     print()
-    print("Choose the provider key Vertex should use for chat requests.")
+    print("Vertex uses DeepSeek for all chat requests.")
     print()
 
 
 def prompt_provider_option() -> ProviderSetupOption:
     """Prompt user for a provider setup option."""
-    print("Available providers:")
-    for idx, option in enumerate(PROVIDER_SETUP_OPTIONS, start=1):
-        default = " (default)" if option == DEFAULT_SETUP_OPTION else ""
-        print(f"  {idx}. {option.display_name}{default}")
-    print()
-
-    while True:
-        answer = input(f"{BOLD}Provider [1]:{RESET} ").strip()
-        if not answer:
-            return DEFAULT_SETUP_OPTION
-        if answer.isdigit():
-            index = int(answer)
-            if 1 <= index <= len(PROVIDER_SETUP_OPTIONS):
-                return PROVIDER_SETUP_OPTIONS[index - 1]
-        print("  Invalid option. Choose one of the listed numbers.")
+    return DEFAULT_SETUP_OPTION
 
 
 def prompt_provider_api_key(option: ProviderSetupOption) -> str:

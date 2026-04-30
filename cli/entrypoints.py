@@ -11,7 +11,8 @@ CONFIG_DIR = Path.home() / ".config" / "vertex"
 ENV_FILE = CONFIG_DIR / ".env"
 VERTEX_CLI_CONFIG_DIR = Path.home() / ".vertex"
 VERTEX_CLI_SETTINGS_FILE = VERTEX_CLI_CONFIG_DIR / "settings.json"
-DEFAULT_MODEL = "nvidia_nim/z-ai/glm4.7"
+DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
+DEEPSEEK_ONLY_DEFAULT_MODEL = DEFAULT_MODEL
 MANAGED_VERTEX_CLI_ENV_BASE = {
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:{port}",
     "ANTHROPIC_AUTH_TOKEN": "freecc",
@@ -66,13 +67,22 @@ def _load_runtime_env_values() -> dict[str, str]:
 def _configured_model_values() -> dict[str, str]:
     """Return model defaults that the vendored CLI should advertise."""
     values = _load_runtime_env_values()
-    fallback = values.get("MODEL") or DEFAULT_MODEL
+    fallback = _deepseek_model_or_default(values.get("MODEL"))
     return {
         "default": fallback,
-        "opus": values.get("MODEL_OPUS") or fallback,
-        "sonnet": values.get("MODEL_SONNET") or fallback,
-        "haiku": values.get("MODEL_HAIKU") or fallback,
+        "opus": _deepseek_model_or_default(values.get("MODEL_OPUS"), fallback),
+        "sonnet": _deepseek_model_or_default(values.get("MODEL_SONNET"), fallback),
+        "haiku": _deepseek_model_or_default(values.get("MODEL_HAIKU"), fallback),
     }
+
+
+def _deepseek_model_or_default(
+    model_ref: str | None, default: str = DEEPSEEK_ONLY_DEFAULT_MODEL
+) -> str:
+    """Return a DeepSeek model ref; ignore any non-DeepSeek provider config."""
+    if model_ref and model_ref.startswith("deepseek/"):
+        return model_ref
+    return default
 
 
 def _display_model_name(model_ref: str) -> str:
@@ -84,23 +94,14 @@ def _display_model_name(model_ref: str) -> str:
 
 
 def _credential_env_for_model(model_ref: str) -> str | None:
-    """Return the credential env var required by a configured model, if any."""
-    if "/" not in model_ref:
-        return "DEEPSEEK_API_KEY"
-
-    from config.provider_catalog import PROVIDER_CATALOG
-
-    provider_id = model_ref.split("/", 1)[0]
-    descriptor = PROVIDER_CATALOG.get(provider_id)
-    if descriptor is None:
-        return "DEEPSEEK_API_KEY"
-    return descriptor.credential_env
+    """Return the credential env var required by Vertex's DeepSeek-only mode."""
+    return "DEEPSEEK_API_KEY"
 
 
 def _needs_api_key() -> bool:
     """Check whether the configured provider credential is missing or empty."""
     values = _load_runtime_env_values()
-    model_ref = values.get("MODEL") or DEFAULT_MODEL
+    model_ref = _deepseek_model_or_default(values.get("MODEL"))
     credential_env = _credential_env_for_model(model_ref)
     if credential_env is None:
         return False
@@ -171,8 +172,8 @@ def _handle_api_key_status_request() -> bool:
         return False
 
     values = _load_runtime_env_values()
-    model_ref = values.get("MODEL") or DEFAULT_MODEL
-    provider_id = model_ref.split("/", 1)[0] if "/" in model_ref else "deepseek"
+    model_ref = _deepseek_model_or_default(values.get("MODEL"))
+    provider_id = "deepseek"
     credential_env = _credential_env_for_model(model_ref)
     configured = credential_env is None or _env_value_is_set(values.get(credential_env))
 
@@ -240,6 +241,22 @@ def _ensure_vertex_cli_settings(port: str) -> None:
 
     raw_env = settings.get("env")
     env: dict[str, Any] = dict(raw_env) if isinstance(raw_env, dict) else {}
+    for key in (
+        "NVIDIA_NIM_API_KEY",
+        "OPENROUTER_API_KEY",
+        "OPENAI_API_KEY",
+        "OPENAI_API_BASE",
+        "OPENAI_BASE_URL",
+        "OPENAI_MODEL",
+        "CLAUDE_CODE_USE_OPENAI",
+        "CLAUDE_CODE_USE_GEMINI",
+        "CLAUDE_CODE_USE_MISTRAL",
+        "CLAUDE_CODE_USE_GITHUB",
+        "CLAUDE_CODE_USE_BEDROCK",
+        "CLAUDE_CODE_USE_VERTEX",
+        "OPENCLAUDE_EXTRA_MODEL_OPTIONS",
+    ):
+        env.pop(key, None)
     env.update(_managed_vertex_cli_env(port))
     models = _configured_model_values()
     settings.update(

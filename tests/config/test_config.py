@@ -29,7 +29,7 @@ class TestSettings:
         monkeypatch.delenv("HTTP_CONNECT_TIMEOUT", raising=False)
         monkeypatch.setitem(Settings.model_config, "env_file", ())
         settings = Settings()
-        assert settings.model == "nvidia_nim/z-ai/glm4.7"
+        assert settings.model == "deepseek/deepseek-v4-flash"
         assert isinstance(settings.provider_rate_limit, int)
         assert isinstance(settings.provider_rate_window, int)
         assert isinstance(settings.nim.temperature, float)
@@ -473,9 +473,9 @@ class TestPerModelMapping:
         """MODEL_OPUS env var is loaded."""
         from config.settings import Settings
 
-        monkeypatch.setenv("MODEL_OPUS", "open_router/deepseek/deepseek-r1")
+        monkeypatch.setenv("MODEL_OPUS", "deepseek/deepseek-v4-pro")
         s = Settings()
-        assert s.model_opus == "open_router/deepseek/deepseek-r1"
+        assert s.model_opus == "deepseek/deepseek-v4-pro"
 
     @pytest.mark.parametrize("env_var", ["MODEL_OPUS", "MODEL_SONNET", "MODEL_HAIKU"])
     def test_empty_model_override_env_is_unset(self, monkeypatch, env_var):
@@ -495,7 +495,7 @@ class TestPerModelMapping:
         [
             (
                 {"MODEL": "nvidia_nim/meta/llama3-70b-instruct"},
-                "nvidia_nim/meta/llama3-70b-instruct",
+                "deepseek/deepseek-v4-flash",
                 None,
             ),
             (
@@ -503,13 +503,13 @@ class TestPerModelMapping:
                     "MODEL": "open_router/anthropic/claude-3-opus",
                     "MODEL_HAIKU": "open_router/anthropic/claude-3-haiku",
                 },
-                "open_router/anthropic/claude-3-opus",
-                "open_router/anthropic/claude-3-haiku",
+                "deepseek/deepseek-v4-flash",
+                "deepseek/deepseek-v4-flash",
             ),
             ({"MODEL": "deepseek/deepseek-chat"}, "deepseek/deepseek-chat", None),
-            ({"MODEL": "lmstudio/qwen2.5-7b"}, "lmstudio/qwen2.5-7b", None),
-            ({"MODEL": "llamacpp/local-model"}, "llamacpp/local-model", None),
-            ({"MODEL": "ollama/llama3.1"}, "ollama/llama3.1", None),
+            ({"MODEL": "lmstudio/qwen2.5-7b"}, "deepseek/deepseek-v4-flash", None),
+            ({"MODEL": "llamacpp/local-model"}, "deepseek/deepseek-v4-flash", None),
+            ({"MODEL": "ollama/llama3.1"}, "deepseek/deepseek-v4-flash", None),
         ],
     )
     def test_settings_models_from_env(
@@ -531,7 +531,7 @@ class TestPerModelMapping:
 
         monkeypatch.setenv("MODEL_SONNET", "nvidia_nim/meta/llama-3.3-70b-instruct")
         s = Settings()
-        assert s.model_sonnet == "nvidia_nim/meta/llama-3.3-70b-instruct"
+        assert s.model_sonnet == "deepseek/deepseek-v4-flash"
 
     def test_model_haiku_from_env(self, monkeypatch):
         """MODEL_HAIKU env var is loaded."""
@@ -539,7 +539,7 @@ class TestPerModelMapping:
 
         monkeypatch.setenv("MODEL_HAIKU", "lmstudio/qwen2.5-7b")
         s = Settings()
-        assert s.model_haiku == "lmstudio/qwen2.5-7b"
+        assert s.model_haiku == "deepseek/deepseek-v4-flash"
 
     def test_model_opus_invalid_provider_raises(self, monkeypatch):
         """MODEL_OPUS with invalid provider prefix raises ValidationError."""
@@ -570,30 +570,20 @@ class TestPerModelMapping:
         from config.settings import Settings
 
         s = Settings()
-        s.model_opus = "open_router/deepseek/deepseek-r1"
-        assert (
-            s.resolve_model("claude-opus-4-20250514")
-            == "open_router/deepseek/deepseek-r1"
-        )
-        assert s.resolve_model("claude-3-opus") == "open_router/deepseek/deepseek-r1"
-        assert (
-            s.resolve_model("claude-3-opus-20240229")
-            == "open_router/deepseek/deepseek-r1"
-        )
+        s.model_opus = "deepseek/deepseek-v4-pro"
+        assert s.resolve_model("claude-opus-4-20250514") == "deepseek/deepseek-v4-pro"
+        assert s.resolve_model("claude-3-opus") == "deepseek/deepseek-v4-pro"
+        assert s.resolve_model("claude-3-opus-20240229") == "deepseek/deepseek-v4-pro"
 
     def test_resolve_model_sonnet_override(self):
         """resolve_model returns model_sonnet for sonnet model names."""
         from config.settings import Settings
 
         s = Settings()
-        s.model_sonnet = "nvidia_nim/meta/llama-3.3-70b-instruct"
+        s.model_sonnet = "deepseek/deepseek-v4-pro"
+        assert s.resolve_model("claude-sonnet-4-20250514") == "deepseek/deepseek-v4-pro"
         assert (
-            s.resolve_model("claude-sonnet-4-20250514")
-            == "nvidia_nim/meta/llama-3.3-70b-instruct"
-        )
-        assert (
-            s.resolve_model("claude-3-5-sonnet-20241022")
-            == "nvidia_nim/meta/llama-3.3-70b-instruct"
+            s.resolve_model("claude-3-5-sonnet-20241022") == "deepseek/deepseek-v4-pro"
         )
 
     def test_resolve_model_haiku_override(self):
@@ -601,41 +591,53 @@ class TestPerModelMapping:
         from config.settings import Settings
 
         s = Settings()
-        s.model_haiku = "lmstudio/qwen2.5-7b"
-        assert s.resolve_model("claude-3-haiku-20240307") == "lmstudio/qwen2.5-7b"
-        assert s.resolve_model("claude-3-5-haiku-20241022") == "lmstudio/qwen2.5-7b"
-        assert s.resolve_model("claude-haiku-4-20250514") == "lmstudio/qwen2.5-7b"
+        s.model_haiku = "deepseek/deepseek-v4-pro"
+        assert s.resolve_model("claude-3-haiku-20240307") == "deepseek/deepseek-v4-pro"
+        assert (
+            s.resolve_model("claude-3-5-haiku-20241022") == "deepseek/deepseek-v4-pro"
+        )
+        assert s.resolve_model("claude-haiku-4-20250514") == "deepseek/deepseek-v4-pro"
 
     def test_resolve_model_fallback_when_override_not_set(self):
         """resolve_model falls back to MODEL when model override is None."""
         from config.settings import Settings
 
         s = Settings()
-        s.model = "nvidia_nim/fallback-model"
+        s.model = "deepseek/deepseek-v4-flash"
         # No model overrides set
-        assert s.resolve_model("claude-opus-4-20250514") == "nvidia_nim/fallback-model"
+        assert s.resolve_model("claude-opus-4-20250514") == "deepseek/deepseek-v4-flash"
         assert (
-            s.resolve_model("claude-sonnet-4-20250514") == "nvidia_nim/fallback-model"
+            s.resolve_model("claude-sonnet-4-20250514") == "deepseek/deepseek-v4-flash"
         )
-        assert s.resolve_model("claude-3-haiku-20240307") == "nvidia_nim/fallback-model"
+        assert (
+            s.resolve_model("claude-3-haiku-20240307") == "deepseek/deepseek-v4-flash"
+        )
 
     def test_resolve_model_unknown_model_falls_back(self):
         """resolve_model falls back to MODEL for unrecognized model names."""
         from config.settings import Settings
 
         s = Settings()
-        s.model = "nvidia_nim/fallback-model"
-        s.model_opus = "open_router/opus-model"
-        assert s.resolve_model("claude-2.1") == "nvidia_nim/fallback-model"
-        assert s.resolve_model("some-unknown-model") == "nvidia_nim/fallback-model"
+        s.model = "deepseek/deepseek-v4-flash"
+        s.model_opus = "deepseek/deepseek-v4-pro"
+        assert s.resolve_model("claude-2.1") == "deepseek/deepseek-v4-flash"
+        assert s.resolve_model("some-unknown-model") == "deepseek/deepseek-v4-flash"
+
+    def test_resolve_model_ignores_non_deepseek_direct_model(self):
+        """Incoming provider-qualified model refs cannot route outside DeepSeek."""
+        from config.settings import Settings
+
+        s = Settings()
+
+        assert s.resolve_model("nvidia_nim/meta/llama3") == "deepseek/deepseek-v4-flash"
 
     def test_resolve_model_case_insensitive(self):
         """Model classification is case-insensitive."""
         from config.settings import Settings
 
         s = Settings()
-        s.model_opus = "open_router/opus-model"
-        assert s.resolve_model("Claude-OPUS-4") == "open_router/opus-model"
+        s.model_opus = "deepseek/deepseek-v4-pro"
+        assert s.resolve_model("Claude-OPUS-4") == "deepseek/deepseek-v4-pro"
 
     def test_parse_provider_type(self):
         """parse_provider_type extracts provider from model string."""

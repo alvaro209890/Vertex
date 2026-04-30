@@ -218,8 +218,8 @@ def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
     assert settings["env"]["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:8083"
     assert settings["env"]["ANTHROPIC_AUTH_TOKEN"] == "freecc"
     assert settings["env"]["DISABLE_LOGIN_COMMAND"] == "1"
-    assert settings["env"]["OPENAI_API_KEY"] == "old-openai-key"
-    assert settings["model"] == "nvidia_nim/test-model"
+    assert "OPENAI_API_KEY" not in settings["env"]
+    assert settings["model"] == "deepseek/deepseek-v4-flash"
     assert settings["customSetting"] is True
     assert "provider" not in settings
 
@@ -238,7 +238,7 @@ def test_cli_logout_updates_deepseek_key_before_auto_wizard(tmp_path: Path) -> N
     with (
         patch.object(entrypoints, "ENV_FILE", env_file),
         patch.object(sys, "argv", ["vertex", "/logout"]),
-        patch("builtins.input", side_effect=["2", "sk-new-deepseek"]),
+        patch("builtins.input", side_effect=["sk-new-deepseek"]),
         patch(
             "builtins.print",
             side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
@@ -265,7 +265,7 @@ def test_cli_auth_login_maps_to_deepseek_key_setup(tmp_path: Path) -> None:
     with (
         patch.object(entrypoints, "ENV_FILE", env_file),
         patch.object(sys, "argv", ["vertex", "auth", "login"]),
-        patch("builtins.input", side_effect=["2", "sk-deepseek-next"]),
+        patch("builtins.input", side_effect=["sk-deepseek-next"]),
         patch("subprocess.run") as run,
     ):
         entrypoints.cli()

@@ -16,6 +16,9 @@ from .constants import HTTP_CONNECT_TIMEOUT_DEFAULT
 from .nim import NimSettings
 from .provider_ids import SUPPORTED_PROVIDER_IDS
 
+DEEPSEEK_ONLY_PROVIDER_ID = "deepseek"
+DEEPSEEK_ONLY_DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
+
 
 def _env_files() -> tuple[Path, ...]:
     """Return env file paths in priority order (later overrides earlier)."""
@@ -94,6 +97,13 @@ def _removed_env_var_message(model_config: Mapping[str, Any]) -> str | None:
     return None
 
 
+def _deepseek_model_ref_or_default(model_ref: str | None) -> str:
+    """Return a DeepSeek model ref, ignoring any other provider."""
+    if model_ref and model_ref.startswith(f"{DEEPSEEK_ONLY_PROVIDER_ID}/"):
+        return model_ref
+    return DEEPSEEK_ONLY_DEFAULT_MODEL
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
@@ -139,7 +149,7 @@ class Settings(BaseSettings):
     # ==================== Model ====================
     # All Claude model requests are mapped to this single model (fallback)
     # Format: provider_type/model/name
-    model: str = "nvidia_nim/z-ai/glm4.7"
+    model: str = DEEPSEEK_ONLY_DEFAULT_MODEL
 
     # Per-model overrides (optional, falls back to MODEL)
     # Each can use a different provider
@@ -247,13 +257,11 @@ class Settings(BaseSettings):
     voice_note_enabled: bool = Field(
         default=True, validation_alias="VOICE_NOTE_ENABLED"
     )
-    # Device: "cpu" | "cuda" | "nvidia_nim"
+    # Device: "cpu" | "cuda"
     # - "cpu"/"cuda": local Whisper (requires voice_local extra: uv sync --extra voice_local)
-    # - "nvidia_nim": NVIDIA NIM Whisper API (requires voice extra: uv sync --extra voice)
     whisper_device: str = Field(default="cpu", validation_alias="WHISPER_DEVICE")
-    # Whisper model ID or short name (for local Whisper) or NVIDIA NIM model (for nvidia_nim)
+    # Whisper model ID or short name (for local Whisper).
     # Local Whisper: "tiny", "base", "small", "medium", "large-v2", "large-v3", "large-v3-turbo"
-    # NVIDIA NIM: "nvidia/parakeet-ctc-1.1b-asr", "openai/whisper-large-v3", etc.
     whisper_model: str = Field(default="base", validation_alias="WHISPER_MODEL")
     # Hugging Face token for faster model downloads (optional, for local Whisper)
     hf_token: str = Field(default="", validation_alias="HF_TOKEN")
@@ -322,10 +330,8 @@ class Settings(BaseSettings):
     @field_validator("whisper_device")
     @classmethod
     def validate_whisper_device(cls, v: str) -> str:
-        if v not in ("cpu", "cuda", "nvidia_nim"):
-            raise ValueError(
-                f"whisper_device must be 'cpu', 'cuda', or 'nvidia_nim', got {v!r}"
-            )
+        if v not in ("cpu", "cuda"):
+            raise ValueError(f"whisper_device must be 'cpu' or 'cuda', got {v!r}")
         return v
 
     @field_validator("messaging_platform")
@@ -386,22 +392,15 @@ class Settings(BaseSettings):
                 f"Format: provider_type/model/name"
             )
         provider = v.split("/", 1)[0]
+        if provider == DEEPSEEK_ONLY_PROVIDER_ID:
+            return v
         if provider not in SUPPORTED_PROVIDER_IDS:
             supported = ", ".join(f"'{p}'" for p in SUPPORTED_PROVIDER_IDS)
             raise ValueError(f"Invalid provider: '{provider}'. Supported: {supported}")
-        return v
+        return DEEPSEEK_ONLY_DEFAULT_MODEL
 
     @model_validator(mode="after")
-    def check_nvidia_nim_api_key(self) -> Settings:
-        if (
-            self.voice_note_enabled
-            and self.whisper_device == "nvidia_nim"
-            and not self.nvidia_nim_api_key.strip()
-        ):
-            raise ValueError(
-                "NVIDIA_NIM_API_KEY is required when WHISPER_DEVICE is 'nvidia_nim'. "
-                "Set it in your .env file."
-            )
+    def keep_deepseek_only_settings(self) -> Settings:
         return self
 
     @model_validator(mode="after")
@@ -436,17 +435,17 @@ class Settings(BaseSettings):
         """
         if "/" in claude_model_name:
             provider = Settings.parse_provider_type(claude_model_name)
-            if provider in SUPPORTED_PROVIDER_IDS:
+            if provider == DEEPSEEK_ONLY_PROVIDER_ID:
                 return claude_model_name
 
         name_lower = claude_model_name.lower()
         if "opus" in name_lower and self.model_opus is not None:
-            return self.model_opus
+            return _deepseek_model_ref_or_default(self.model_opus)
         if "haiku" in name_lower and self.model_haiku is not None:
-            return self.model_haiku
+            return _deepseek_model_ref_or_default(self.model_haiku)
         if "sonnet" in name_lower and self.model_sonnet is not None:
-            return self.model_sonnet
-        return self.model
+            return _deepseek_model_ref_or_default(self.model_sonnet)
+        return _deepseek_model_ref_or_default(self.model)
 
     def resolve_thinking(self, claude_model_name: str) -> bool:
         """Resolve whether thinking is enabled for an incoming Claude model name."""
