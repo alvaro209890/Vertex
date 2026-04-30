@@ -191,7 +191,7 @@ def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
                     "ANTHROPIC_BASE_URL": "https://api.anthropic.com",
                     "OPENAI_API_KEY": "old-openai-key",
                 },
-                "model": "nvidia_nim/z-ai/glm4.7",
+                "model": "other/model",
                 "provider": "openclaude",
                 "customSetting": True,
             }

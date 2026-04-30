@@ -27,7 +27,7 @@ def test_thinking_start_dropped_when_disabled() -> None:
 
 def test_thinking_delta_dropped_when_disabled() -> None:
     st = NativeSseBlockPolicyState()
-    # No prior start in stream (OpenRouter-style: returns None when thinking off)
+    # No prior start in stream: returns None when thinking is off.
     payload = {
         "type": "content_block_delta",
         "index": 0,
@@ -118,7 +118,7 @@ def test_interleaved_thinking_signature_delta_remaps_to_reopened_block_index() -
 
 
 def test_startless_text_delta_synthesizes_start_when_thinking_disabled() -> None:
-    """Startless text deltas must not be dropped when thinking is disabled (OpenRouter)."""
+    """Startless text deltas must not be dropped when thinking is disabled."""
     st = NativeSseBlockPolicyState()
     payload = {
         "type": "content_block_delta",

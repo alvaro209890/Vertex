@@ -27,7 +27,6 @@ class MessagingPlatformOptions:
     whisper_model: str = "base"
     whisper_device: str = "cpu"
     hf_token: str = ""
-    nvidia_nim_api_key: str = ""
     messaging_rate_limit: int = 1
     messaging_rate_window: float = 1.0
     log_raw_messaging_content: bool = False
@@ -67,7 +66,6 @@ def create_messaging_platform(
             whisper_model=opts.whisper_model,
             whisper_device=opts.whisper_device,
             hf_token=opts.hf_token,
-            nvidia_nim_api_key=opts.nvidia_nim_api_key,
             messaging_rate_limit=opts.messaging_rate_limit,
             messaging_rate_window=opts.messaging_rate_window,
             log_raw_messaging_content=opts.log_raw_messaging_content,
@@ -89,7 +87,6 @@ def create_messaging_platform(
             whisper_model=opts.whisper_model,
             whisper_device=opts.whisper_device,
             hf_token=opts.hf_token,
-            nvidia_nim_api_key=opts.nvidia_nim_api_key,
             messaging_rate_limit=opts.messaging_rate_limit,
             messaging_rate_window=opts.messaging_rate_window,
             log_raw_messaging_content=opts.log_raw_messaging_content,

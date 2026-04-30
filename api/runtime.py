@@ -81,7 +81,7 @@ class AppRuntime:
         return cls(app=app, settings=settings or get_settings())
 
     async def startup(self) -> None:
-        logger.info("Starting Claude Code Proxy...")
+        logger.info("Starting Vertex proxy...")
         self._provider_registry = ProviderRegistry()
         self.app.state.provider_registry = self._provider_registry
         warn_if_process_auth_token(self.settings)
@@ -142,7 +142,6 @@ class AppRuntime:
                     whisper_model=self.settings.whisper_model,
                     whisper_device=self.settings.whisper_device,
                     hf_token=self.settings.hf_token,
-                    nvidia_nim_api_key=self.settings.nvidia_nim_api_key,
                     messaging_rate_limit=self.settings.messaging_rate_limit,
                     messaging_rate_window=self.settings.messaging_rate_window,
                     log_raw_messaging_content=self.settings.log_raw_messaging_content,

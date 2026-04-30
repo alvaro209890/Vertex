@@ -13,11 +13,9 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .constants import HTTP_CONNECT_TIMEOUT_DEFAULT
-from .nim import NimSettings
-from .provider_ids import SUPPORTED_PROVIDER_IDS
 
-DEEPSEEK_ONLY_PROVIDER_ID = "deepseek"
-DEEPSEEK_ONLY_DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
+DEEPSEEK_PROVIDER_ID = "deepseek"
+DEEPSEEK_DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
 
 
 def _env_files() -> tuple[Path, ...]:
@@ -98,17 +96,14 @@ def _removed_env_var_message(model_config: Mapping[str, Any]) -> str | None:
 
 
 def _deepseek_model_ref_or_default(model_ref: str | None) -> str:
-    """Return a DeepSeek model ref, ignoring any other provider."""
-    if model_ref and model_ref.startswith(f"{DEEPSEEK_ONLY_PROVIDER_ID}/"):
+    """Return a DeepSeek model ref, defaulting to v4-flash."""
+    if model_ref and model_ref.startswith(f"{DEEPSEEK_PROVIDER_ID}/"):
         return model_ref
-    return DEEPSEEK_ONLY_DEFAULT_MODEL
+    return DEEPSEEK_DEFAULT_MODEL
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
-
-    # ==================== OpenRouter Config ====================
-    open_router_api_key: str = Field(default="", validation_alias="OPENROUTER_API_KEY")
 
     # ==================== DeepSeek Config ====================
     deepseek_api_key: str = Field(default="", validation_alias="DEEPSEEK_API_KEY")
@@ -125,43 +120,16 @@ class Settings(BaseSettings):
         default=1.0, validation_alias="MESSAGING_RATE_WINDOW"
     )
 
-    # ==================== NVIDIA NIM Config ====================
-    nvidia_nim_api_key: str = ""
-
-    # ==================== LM Studio Config ====================
-    lm_studio_base_url: str = Field(
-        default="http://localhost:1234/v1",
-        validation_alias="LM_STUDIO_BASE_URL",
-    )
-
-    # ==================== Llama.cpp Config ====================
-    llamacpp_base_url: str = Field(
-        default="http://localhost:8080/v1",
-        validation_alias="LLAMACPP_BASE_URL",
-    )
-
-    # ==================== Ollama Config ====================
-    ollama_base_url: str = Field(
-        default="http://localhost:11434",
-        validation_alias="OLLAMA_BASE_URL",
-    )
-
     # ==================== Model ====================
     # All Claude model requests are mapped to this single model (fallback)
-    # Format: provider_type/model/name
-    model: str = DEEPSEEK_ONLY_DEFAULT_MODEL
+    # Format: deepseek/model/name
+    model: str = DEEPSEEK_DEFAULT_MODEL
 
     # Per-model overrides (optional, falls back to MODEL)
-    # Each can use a different provider
+    # Each can use a different DeepSeek model
     model_opus: str | None = Field(default=None, validation_alias="MODEL_OPUS")
     model_sonnet: str | None = Field(default=None, validation_alias="MODEL_SONNET")
     model_haiku: str | None = Field(default=None, validation_alias="MODEL_HAIKU")
-
-    # ==================== Per-Provider Proxy ====================
-    nvidia_nim_proxy: str = Field(default="", validation_alias="NVIDIA_NIM_PROXY")
-    open_router_proxy: str = Field(default="", validation_alias="OPENROUTER_PROXY")
-    lmstudio_proxy: str = Field(default="", validation_alias="LMSTUDIO_PROXY")
-    llamacpp_proxy: str = Field(default="", validation_alias="LLAMACPP_PROXY")
 
     # ==================== Provider Rate Limiting ====================
     provider_rate_limit: int = Field(default=40, validation_alias="PROVIDER_RATE_LIMIT")
@@ -249,9 +217,6 @@ class Settings(BaseSettings):
     debug_subagent_stack: bool = Field(
         default=False, validation_alias="DEBUG_SUBAGENT_STACK"
     )
-
-    # ==================== NIM Settings ====================
-    nim: NimSettings = Field(default_factory=NimSettings)
 
     # ==================== Voice Note Transcription ====================
     voice_note_enabled: bool = Field(
@@ -370,16 +335,6 @@ class Settings(BaseSettings):
                 )
         return ",".join(schemes)
 
-    @field_validator("ollama_base_url")
-    @classmethod
-    def validate_ollama_base_url(cls, v: str) -> str:
-        if v.rstrip("/").endswith("/v1"):
-            raise ValueError(
-                "OLLAMA_BASE_URL must be the Ollama root URL for native Anthropic "
-                "messages, e.g. http://localhost:11434 (without /v1)."
-            )
-        return v
-
     @field_validator("model", "model_opus", "model_sonnet", "model_haiku")
     @classmethod
     def validate_model_format(cls, v: str | None) -> str | None:
@@ -387,21 +342,13 @@ class Settings(BaseSettings):
             return None
         if "/" not in v:
             raise ValueError(
-                f"Model must be prefixed with provider type. "
-                f"Valid providers: {', '.join(SUPPORTED_PROVIDER_IDS)}. "
-                f"Format: provider_type/model/name"
+                "Model provider type must be prefixed with 'deepseek/'. "
+                "Format: deepseek/model/name"
             )
         provider = v.split("/", 1)[0]
-        if provider == DEEPSEEK_ONLY_PROVIDER_ID:
-            return v
-        if provider not in SUPPORTED_PROVIDER_IDS:
-            supported = ", ".join(f"'{p}'" for p in SUPPORTED_PROVIDER_IDS)
-            raise ValueError(f"Invalid provider: '{provider}'. Supported: {supported}")
-        return DEEPSEEK_ONLY_DEFAULT_MODEL
-
-    @model_validator(mode="after")
-    def keep_deepseek_only_settings(self) -> Settings:
-        return self
+        if provider != DEEPSEEK_PROVIDER_ID:
+            raise ValueError(f"Only '{DEEPSEEK_PROVIDER_ID}' provider is supported.")
+        return v
 
     @model_validator(mode="after")
     def prefer_dotenv_anthropic_auth_token(self) -> Settings:
@@ -435,7 +382,7 @@ class Settings(BaseSettings):
         """
         if "/" in claude_model_name:
             provider = Settings.parse_provider_type(claude_model_name)
-            if provider == DEEPSEEK_ONLY_PROVIDER_ID:
+            if provider == DEEPSEEK_PROVIDER_ID:
                 return claude_model_name
 
         name_lower = claude_model_name.lower()

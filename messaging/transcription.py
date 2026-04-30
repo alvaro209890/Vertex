@@ -2,17 +2,12 @@
 
 Supports:
 - Local Whisper (cpu/cuda): Hugging Face transformers pipeline
-- NVIDIA NIM: NVIDIA NIM Whisper/Parakeet
 """
 
 from pathlib import Path
 from typing import Any
 
 from loguru import logger
-
-from providers.nvidia_nim.voice import (
-    transcribe_audio_file as transcribe_nvidia_nim_audio,
-)
 
 # Max file size in bytes (25 MB)
 MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024
@@ -90,20 +85,17 @@ def transcribe_audio(
     whisper_model: str = "base",
     whisper_device: str = "cpu",
     hf_token: str = "",
-    nvidia_nim_api_key: str = "",
 ) -> str:
     """
     Transcribe audio file to text.
 
-    Supports:
-    - whisper_device="cpu"/"cuda": local Whisper (requires voice_local extra)
-    - whisper_device="nvidia_nim": NVIDIA NIM Whisper API (requires voice extra)
+    Supports local Whisper (requires voice_local extra).
 
     Args:
         file_path: Path to audio file (OGG, MP3, MP4, WAV, M4A supported)
         mime_type: MIME type of the audio (e.g. "audio/ogg")
-        whisper_model: Model ID or short name (local) or NVIDIA NIM model
-        whisper_device: "cpu" | "cuda" | "nvidia_nim"
+        whisper_model: Model ID or short name
+        whisper_device: "cpu" | "cuda"
 
     Returns:
         Transcribed text
@@ -123,10 +115,6 @@ def transcribe_audio(
             f"Audio file too large ({size} bytes). Max {MAX_AUDIO_SIZE_BYTES} bytes."
         )
 
-    if whisper_device == "nvidia_nim":
-        return transcribe_nvidia_nim_audio(
-            file_path, whisper_model, api_key=nvidia_nim_api_key
-        )
     return _transcribe_local(
         file_path, whisper_model, whisper_device, hf_token=hf_token
     )

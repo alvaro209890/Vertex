@@ -28,7 +28,6 @@ from core.anthropic.stream_contracts import (
     text_content,
 )
 from messaging.event_parser import parse_cli_event
-from providers.exceptions import InvalidRequestError
 
 _STRICT_EGRESS = WebFetchEgressPolicy(
     allow_private_network_targets=False,
@@ -37,7 +36,7 @@ _STRICT_EGRESS = WebFetchEgressPolicy(
 
 
 class FixedProviderModelRouter(ModelRouter):
-    """Test double: pin ``provider_id`` for OpenAI vs native routing assertions."""
+    """Test double: pin ``provider_id`` for routing assertions."""
 
     def __init__(self, settings: Settings, provider_id: str) -> None:
         super().__init__(settings)
@@ -94,29 +93,29 @@ def test_web_server_tool_not_detected_when_forced_name_missing_from_tools():
     assert not is_web_server_tool_request(request)
 
 
-def test_service_rejects_forced_server_tool_on_openai_when_disabled():
-    """OpenAI Chat upstreams cannot run forced server tools without the local handler."""
+def test_listed_server_tools_pass_through_to_deepseek() -> None:
+    """DeepSeek (anthropic_messages transport) passes listed server tools to the provider."""
     settings = Settings()
-    assert settings.enable_web_server_tools is False
+
+    async def fake_stream(*_a, **_k):
+        yield 'event: message_start\ndata: {"type":"message_start"}\n\n'
+        yield 'event: message_stop\ndata: {"type":"message_stop"}\n\n'
+
+    mock_provider = MagicMock()
+    mock_provider.stream_response = fake_stream
     service = ClaudeProxyService(
         settings,
-        provider_getter=lambda _: MagicMock(),
-        model_router=FixedProviderModelRouter(settings, "nvidia_nim"),
+        provider_getter=lambda _: mock_provider,
+        model_router=FixedProviderModelRouter(settings, "deepseek"),
     )
     request = MessagesRequest(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=100,
-        messages=[
-            Message(
-                role="user",
-                content="Perform a web search for the query: DeepSeek V4 model release 2026",
-            )
-        ],
+        model="m",
+        max_tokens=20,
+        messages=[Message(role="user", content="q")],
         tools=[Tool(name="web_search", type="web_search_20250305")],
-        tool_choice={"type": "tool", "name": "web_search"},
     )
-    with pytest.raises(InvalidRequestError, match="ENABLE_WEB_SERVER_TOOLS"):
-        service.create_message(request)
+    service.create_message(request)
+    mock_provider.preflight_stream.assert_called()
 
 
 @pytest.mark.parametrize(
@@ -577,45 +576,3 @@ async def test_drain_response_body_capped_stops_after_first_chunk_when_oversized
 
     await _drain_response_body_capped(response, cap)
     assert chunk_calls["n"] == 1
-
-
-def test_service_rejects_listed_server_tools_on_openai_chat() -> None:
-    settings = Settings()
-    service = ClaudeProxyService(
-        settings,
-        provider_getter=lambda _: MagicMock(),
-        model_router=FixedProviderModelRouter(settings, "nvidia_nim"),
-    )
-    request = MessagesRequest(
-        model="m",
-        max_tokens=20,
-        messages=[Message(role="user", content="q")],
-        tools=[Tool(name="web_search", type="web_search_20250305")],
-    )
-    with pytest.raises(InvalidRequestError, match="OpenAI Chat upstreams"):
-        service.create_message(request)
-
-
-def test_listed_server_tools_routed_on_open_router() -> None:
-    """Native Anthropic transport may receive listed server tool definitions."""
-    settings = Settings()
-
-    async def fake_stream(*_a, **_k):
-        yield 'event: message_start\ndata: {"type":"message_start"}\n\n'
-        yield 'event: message_stop\ndata: {"type":"message_stop"}\n\n'
-
-    mock_provider = MagicMock()
-    mock_provider.stream_response = fake_stream
-    service = ClaudeProxyService(
-        settings,
-        provider_getter=lambda _: mock_provider,
-        model_router=FixedProviderModelRouter(settings, "open_router"),
-    )
-    request = MessagesRequest(
-        model="m",
-        max_tokens=20,
-        messages=[Message(role="user", content="q")],
-        tools=[Tool(name="web_search", type="web_search_20250305")],
-    )
-    service.create_message(request)
-    mock_provider.preflight_stream.assert_called()

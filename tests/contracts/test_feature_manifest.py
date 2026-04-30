@@ -6,11 +6,6 @@ from pathlib import Path
 from messaging.platforms.factory import create_messaging_platform
 from providers.base import BaseProvider
 from providers.deepseek import DeepSeekProvider
-from providers.llamacpp import LlamaCppProvider
-from providers.lmstudio import LMStudioProvider
-from providers.nvidia_nim import NvidiaNimProvider
-from providers.ollama import OllamaProvider
-from providers.open_router import OpenRouterProvider
 from smoke.features import FEATURE_INVENTORY, README_FEATURES, feature_ids
 
 VALID_SOURCE = {"readme", "public_surface"}
@@ -67,12 +62,7 @@ def test_product_coverage_is_not_satisfied_by_prereq_probes() -> None:
 
 def test_provider_and_platform_registries_include_advertised_builtins() -> None:
     provider_classes = {
-        "nvidia_nim": NvidiaNimProvider,
-        "open_router": OpenRouterProvider,
         "deepseek": DeepSeekProvider,
-        "lmstudio": LMStudioProvider,
-        "llamacpp": LlamaCppProvider,
-        "ollama": OllamaProvider,
     }
     for provider_class in provider_classes.values():
         assert issubclass(provider_class, BaseProvider)

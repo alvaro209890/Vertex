@@ -67,7 +67,6 @@ class TelegramPlatform(MessagingPlatform):
         whisper_model: str = "base",
         whisper_device: str = "cpu",
         hf_token: str = "",
-        nvidia_nim_api_key: str = "",
         messaging_rate_limit: int = 1,
         messaging_rate_window: float = 1.0,
         log_raw_messaging_content: bool = False,
@@ -96,7 +95,6 @@ class TelegramPlatform(MessagingPlatform):
         self._pending_voice = PendingVoiceRegistry()
         self._voice_transcription = VoiceTranscriptionService(
             hf_token=hf_token,
-            nvidia_nim_api_key=nvidia_nim_api_key,
         )
         self._voice_note_enabled = voice_note_enabled
         self._whisper_model = whisper_model
@@ -190,7 +188,7 @@ class TelegramPlatform(MessagingPlatform):
             target = self.allowed_user_id
             if target:
                 startup_text = (
-                    f"🚀 *{escape_md_v2('Claude Code Proxy is online!')}* "
+                    f"🚀 *{escape_md_v2('Vertex proxy is online!')}* "
                     f"{escape_md_v2('(Bot API)')}"
                 )
                 await self.send_message(
@@ -488,7 +486,7 @@ class TelegramPlatform(MessagingPlatform):
     ) -> None:
         """Handle /start command."""
         if update.message:
-            await update.message.reply_text("👋 Hello! I am the Claude Code Proxy Bot.")
+            await update.message.reply_text("👋 Hello! I am the Vertex bot.")
         # We can also treat this as a message if we want it to trigger something
         await self._on_telegram_message(update, context)
 

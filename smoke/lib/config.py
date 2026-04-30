@@ -7,8 +7,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from config.provider_catalog import PROVIDER_CATALOG, SUPPORTED_PROVIDER_IDS
+from config.provider_ids import SUPPORTED_PROVIDER_IDS
 from config.settings import Settings, get_settings
+from providers.registry import PROVIDER_DESCRIPTORS
 
 DEFAULT_TARGETS = frozenset(
     {
@@ -17,11 +18,9 @@ DEFAULT_TARGETS = frozenset(
         "cli",
         "clients",
         "config",
+        "deepseek",
         "extensibility",
-        "llamacpp",
-        "lmstudio",
         "messaging",
-        "ollama",
         "providers",
         "rate_limit",
         "tools",
@@ -38,29 +37,21 @@ TARGET_ALIASES = {
 SECRET_KEY_PARTS = ("KEY", "TOKEN", "SECRET", "WEBHOOK", "AUTH")
 
 PROVIDER_SMOKE_DEFAULT_MODELS: dict[str, str] = {
-    "nvidia_nim": "nvidia_nim/z-ai/glm4.7",
-    "open_router": "open_router/stepfun/step-3.5-flash:free",
     "deepseek": "deepseek/deepseek-v4-pro",
-    "lmstudio": "lmstudio/local-model",
-    "llamacpp": "llamacpp/local-model",
-    "ollama": "ollama/llama3.1",
 }
 
 
 TARGET_REQUIRED_ENV: dict[str, tuple[str, ...]] = {
     "api": (),
     "auth": (),
-    "cli": ("FCC_SMOKE_CLAUDE_BIN", "configured provider for Claude CLI prompt"),
+    "cli": ("FCC_SMOKE_CLAUDE_BIN", "configured DeepSeek provider for CLI prompt"),
     "clients": (),
     "config": (),
     "extensibility": (),
     "messaging": (),
-    "providers": ("configured provider credentials/endpoints or FCC_SMOKE_MODEL_*",),
-    "rate_limit": ("configured provider model",),
-    "tools": ("configured tool-capable provider model",),
-    "lmstudio": ("LM_STUDIO_BASE_URL with a running LM Studio server",),
-    "llamacpp": ("LLAMACPP_BASE_URL with a running llama-server",),
-    "ollama": ("OLLAMA_BASE_URL with a running Ollama server",),
+    "providers": ("DEEPSEEK_API_KEY or FCC_SMOKE_MODEL_DEEPSEEK",),
+    "rate_limit": ("configured DeepSeek model",),
+    "tools": ("configured DeepSeek model with tool support",),
     "telegram": (
         "TELEGRAM_BOT_TOKEN",
         "ALLOWED_TELEGRAM_USER_ID or FCC_SMOKE_TELEGRAM_CHAT_ID",
@@ -163,7 +154,7 @@ class SmokeConfig:
     def _include_provider_in_smoke(
         self, provider: str, mapped_providers: set[str]
     ) -> bool:
-        descriptor = PROVIDER_CATALOG[provider]
+        descriptor = PROVIDER_DESCRIPTORS[provider]
         if "local" not in descriptor.capabilities:
             return True
         if provider in mapped_providers:
@@ -173,18 +164,8 @@ class SmokeConfig:
         return bool(os.getenv(f"FCC_SMOKE_MODEL_{provider.upper()}"))
 
     def has_provider_configuration(self, provider: str) -> bool:
-        if provider == "nvidia_nim":
-            return bool(self.settings.nvidia_nim_api_key.strip())
-        if provider == "open_router":
-            return bool(self.settings.open_router_api_key.strip())
         if provider == "deepseek":
             return bool(self.settings.deepseek_api_key.strip())
-        if provider == "lmstudio":
-            return bool(self.settings.lm_studio_base_url.strip())
-        if provider == "llamacpp":
-            return bool(self.settings.llamacpp_base_url.strip())
-        if provider == "ollama":
-            return bool(self.settings.ollama_base_url.strip())
         return False
 
 
@@ -210,7 +191,7 @@ def _provider_smoke_model(provider: str) -> tuple[str, str]:
 
     default = PROVIDER_SMOKE_DEFAULT_MODELS.get(provider)
     if default is None:
-        descriptor = PROVIDER_CATALOG[provider]
+        descriptor = PROVIDER_DESCRIPTORS[provider]
         default = f"{descriptor.provider_id}/smoke-default"
     return default, "provider_default"
 
@@ -225,13 +206,11 @@ def _normalize_provider_model(provider: str, raw_model: str) -> str:
     prefix = Settings.parse_provider_type(model)
     if prefix == provider:
         return model
-    if prefix in SUPPORTED_PROVIDER_IDS:
-        msg = (
-            f"FCC_SMOKE_MODEL_{provider.upper()} must use provider prefix "
-            f"{provider!r}, got {model!r}"
-        )
-        raise ValueError(msg)
-    return f"{provider}/{model}"
+    msg = (
+        f"FCC_SMOKE_MODEL_{provider.upper()} must use provider prefix "
+        f"{provider!r}, got {model!r}"
+    )
+    raise ValueError(msg)
 
 
 def auth_headers(token: str | None = None) -> dict[str, str]:

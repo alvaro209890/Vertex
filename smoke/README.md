@@ -46,7 +46,7 @@ Default targets do not send real bot messages or load voice backends:
 | --- | --- | --- |
 | `api` | messages, count_tokens full payload, errors, `/stop`, optimizations | configured provider only for streaming messages |
 | `auth` | x-api-key, bearer, anthropic-auth-token, invalid/missing auth | none; test sets an isolated token |
-| `cli` | `fcc-init`, server entrypoint, Claude CLI adaptive thinking, session cleanup | Claude CLI binary and provider only for real CLI |
+| `cli` | `vertex-init`, server entrypoint, Vertex CLI adaptive thinking, session cleanup | Vertex CLI binary and DeepSeek provider only for real CLI |
 | `clients` | VS Code and JetBrains protocol payloads | configured provider |
 | `config` | env precedence, removed-env migration, proxy/timeouts | none |
 | `extensibility` | provider registry and platform factory construction | none |
@@ -54,9 +54,6 @@ Default targets do not send real bot messages or load voice backends:
 | `providers` | multi-turn text, adaptive thinking history, tools, disconnect, errors | configured providers, optional `FCC_SMOKE_MODEL_*` |
 | `tools` | forced tool_use and tool_result continuation | tool-capable configured provider |
 | `rate_limit` | disconnect cleanup and follow-up request | configured provider |
-| `lmstudio` | local `/models` plus native `/messages` through proxy | running LM Studio server |
-| `llamacpp` | local `/models` plus native `/messages` through proxy | running llama-server |
-| `ollama` | local `/api/tags` plus native Anthropic messages through proxy | running Ollama server |
 
 Side-effectful targets are opt-in:
 
@@ -64,20 +61,20 @@ Side-effectful targets are opt-in:
 | --- | --- | --- |
 | `telegram` | getMe, send, edit, delete, optional manual inbound | token and chat/user ID |
 | `discord` | channel access, send, edit, delete, optional manual inbound | token and channel ID |
-| `voice` | generated WAV through local Whisper or NVIDIA NIM transcription | `VOICE_NOTE_ENABLED=true`, `FCC_SMOKE_RUN_VOICE=1` |
+| `voice` | generated WAV through local Whisper transcription | `VOICE_NOTE_ENABLED=true`, `FCC_SMOKE_RUN_VOICE=1` |
 
 ## Examples
 
 ```powershell
 $env:FCC_LIVE_SMOKE = "1"
-$env:FCC_SMOKE_PROVIDER_MATRIX = "open_router,nvidia_nim,deepseek,lmstudio,llamacpp,ollama"
+$env:FCC_SMOKE_PROVIDER_MATRIX = "deepseek"
 uv run pytest smoke/product -n 0 -s --tb=short
 ```
 
 ```powershell
 $env:FCC_LIVE_SMOKE = "1"
-$env:FCC_SMOKE_TARGETS = "ollama"
-$env:OLLAMA_BASE_URL = "http://localhost:11434"
+$env:FCC_SMOKE_TARGETS = "providers"
+$env:FCC_SMOKE_MODEL_DEEPSEEK = "deepseek-v4-pro"
 uv run pytest smoke/prereq smoke/product -n 0 -s --tb=short
 ```
 
@@ -101,13 +98,10 @@ uv run pytest smoke/product -n 0 -s --tb=short
 - `FCC_ALLOW_NO_PROVIDER_SMOKE=1`: permits no-provider live smoke for harness work.
 - `FCC_SMOKE_TARGETS`: comma-separated targets, or `all`.
 - `FCC_SMOKE_PROVIDER_MATRIX`: comma-separated provider prefixes to require.
-- `FCC_SMOKE_MODEL_NVIDIA_NIM`, `FCC_SMOKE_MODEL_OPEN_ROUTER`,
-  `FCC_SMOKE_MODEL_DEEPSEEK`, `FCC_SMOKE_MODEL_LMSTUDIO`,
-  `FCC_SMOKE_MODEL_LLAMACPP`, `FCC_SMOKE_MODEL_OLLAMA`: optional per-provider
-  smoke model overrides. Values may include the provider prefix or just the model
-  name for that provider.
+- `FCC_SMOKE_MODEL_DEEPSEEK`: optional DeepSeek smoke model override. Values may
+  include the `deepseek/` provider prefix or just the DeepSeek model name.
 - `FCC_SMOKE_TIMEOUT_S`: per-request/subprocess timeout, default `45`.
-- `FCC_SMOKE_CLAUDE_BIN`: Claude CLI executable name, default `claude`.
+- `FCC_SMOKE_CLAUDE_BIN`: Vertex/Claude-compatible CLI executable name, default `claude`.
 - `FCC_SMOKE_TELEGRAM_CHAT_ID`: Telegram chat/user ID for send/edit/delete.
 - `FCC_SMOKE_DISCORD_CHANNEL_ID`: Discord channel ID for send/edit/delete.
 - `FCC_SMOKE_INTERACTIVE=1`: enables manual inbound Telegram/Discord checks.
@@ -117,8 +111,8 @@ uv run pytest smoke/product -n 0 -s --tb=short
 
 Run smoke the same way you run tests (`uv run pytest smoke` from the repo). Child
 processes use the **same Python interpreter** as the test runner, not nested
-`uv run`, so Windows does not try to replace `free-claude-code.exe` while it is
-locked.
+`uv run`, so Windows does not try to replace the installed `vertex.exe` while it
+is locked.
 
 ## Failure Classes
 

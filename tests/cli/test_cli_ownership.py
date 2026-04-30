@@ -21,9 +21,12 @@ def test_cli_session_owns_typed_runner_config(tmp_path: Path) -> None:
     assert session.config.claude_bin == "claude-test"
 
 
-def test_claude_pick_uses_project_python_runner() -> None:
+def test_claude_pick_launches_claude_with_deepseek_env() -> None:
     script = Path(__file__).resolve().parents[2] / "claude-pick"
     text = script.read_text(encoding="utf-8")
 
-    assert "uv run python" in text
-    assert "python3 -c" not in text
+    assert "exec claude" in text
+    assert "DEEPSEEK_API_KEY" not in text
+    assert "ANTHROPIC_AUTH_TOKEN" in text
+    assert "Base_URL" in text or "BASE_URL" in text
+    assert "deepseek/deepseek" in text

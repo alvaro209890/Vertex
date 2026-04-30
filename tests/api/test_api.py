@@ -4,12 +4,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.app import create_app
-from providers.nvidia_nim import NvidiaNimProvider
+from providers.deepseek import DeepSeekProvider
 
 app = create_app()
 
 # Mock provider
-mock_provider = MagicMock(spec=NvidiaNimProvider)
+mock_provider = MagicMock(spec=DeepSeekProvider)
 
 # Track stream_response calls for test_model_mapping
 _stream_response_calls: list = []

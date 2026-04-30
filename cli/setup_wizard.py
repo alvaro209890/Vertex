@@ -38,7 +38,7 @@ def _banner() -> None:
     """Print the branded Vertex setup banner."""
     print()
     print(f"{GREEN}{'=' * 54}{RESET}")
-    print(f"{GREEN}  Welcome to Vertex — Local Proxy for Claude Code{RESET}")
+    print(f"{GREEN}  Welcome to Vertex — DeepSeek CLI and local proxy{RESET}")
     print(f"{GREEN}{'=' * 54}{RESET}")
     print()
     print("Vertex uses DeepSeek for all chat requests.")

@@ -1,4 +1,4 @@
-"""API layer for Claude Code Proxy."""
+"""API layer for the Vertex proxy."""
 
 from .app import create_app
 from .models import (

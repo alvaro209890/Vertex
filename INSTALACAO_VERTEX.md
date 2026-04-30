@@ -26,10 +26,12 @@ sudo apt install -y curl pipx
 pipx ensurepath
 source ~/.bashrc
 
-curl -fsSL https://raw.githubusercontent.com/alvaro209890/Vertex/main/scripts/install-vertex.sh | bash
+pipx install --force "git+https://github.com/alvaro209890/Vertex.git"
 source ~/.bashrc
 hash -r
 
+vertex auth login
+vertex auth status
 vertex
 ```
 
@@ -40,10 +42,12 @@ sudo dnf install -y curl pipx
 pipx ensurepath
 source ~/.bashrc
 
-curl -fsSL https://raw.githubusercontent.com/alvaro209890/Vertex/main/scripts/install-vertex.sh | bash
+pipx install --force "git+https://github.com/alvaro209890/Vertex.git"
 source ~/.bashrc
 hash -r
 
+vertex auth login
+vertex auth status
 vertex
 ```
 
@@ -54,11 +58,26 @@ sudo pacman -Sy --needed curl python-pipx
 pipx ensurepath
 source ~/.bashrc
 
-curl -fsSL https://raw.githubusercontent.com/alvaro209890/Vertex/main/scripts/install-vertex.sh | bash
+pipx install --force "git+https://github.com/alvaro209890/Vertex.git"
 source ~/.bashrc
 hash -r
 
+vertex auth login
+vertex auth status
 vertex
+```
+
+## Atualizar Checkout Existente
+
+Use este caminho em um PC onde voce ja trabalha com o repositorio clonado.
+
+```bash
+cd /path/to/Vertex
+git pull origin main
+uv sync
+uv run vertex auth login
+uv run vertex auth status
+uv run vertex
 ```
 
 ## Reinstalacao Limpando Tudo

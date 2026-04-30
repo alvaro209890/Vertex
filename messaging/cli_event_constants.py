@@ -40,12 +40,12 @@ TRANSCRIPT_EVENT_TYPES = frozenset(
 
 # Event type -> (emoji, label) for status updates (O(1) lookup)
 _EVENT_STATUS_MAP: dict[str, tuple[str, str]] = {
-    "thinking_start": ("🧠", "Claude is thinking..."),
-    "thinking_delta": ("🧠", "Claude is thinking..."),
-    "thinking_chunk": ("🧠", "Claude is thinking..."),
-    "text_start": ("🧠", "Claude is working..."),
-    "text_delta": ("🧠", "Claude is working..."),
-    "text_chunk": ("🧠", "Claude is working..."),
+    "thinking_start": ("🧠", "DeepSeek is thinking..."),
+    "thinking_delta": ("🧠", "DeepSeek is thinking..."),
+    "thinking_chunk": ("🧠", "DeepSeek is thinking..."),
+    "text_start": ("🧠", "Vertex is working..."),
+    "text_delta": ("🧠", "Vertex is working..."),
+    "text_chunk": ("🧠", "Vertex is working..."),
     "tool_result": ("⏳", "Executing tools..."),
 }
 

@@ -80,11 +80,8 @@ def test_config_does_not_import_non_config_packages() -> None:
     assert offenders == []
 
 
-_MESSAGING_ALLOWED_PROVIDER_MODULES = frozenset({"providers.nvidia_nim.voice"})
-
-
 def test_messaging_does_not_import_disallowed_modules() -> None:
-    """Messaging is wired by ``api.runtime``; narrow provider imports only for NIM voice ASR."""
+    """Messaging must not import provider or runtime packages (wired by ``api.runtime``)."""
     repo_root = Path(__file__).resolve().parents[2]
     offenders: list[str] = []
     for path in (repo_root / "messaging").rglob("*.py"):
@@ -98,12 +95,7 @@ def test_messaging_does_not_import_disallowed_modules() -> None:
                 or imported.startswith("cli.")
                 or imported == "smoke"
                 or imported.startswith("smoke.")
-            ):
-                rel = path.relative_to(repo_root)
-                offenders.append(f"{rel}: {imported}")
-            elif imported.startswith("providers."):
-                if imported in _MESSAGING_ALLOWED_PROVIDER_MODULES:
-                    continue
+            ) or imported.startswith("providers."):
                 rel = path.relative_to(repo_root)
                 offenders.append(f"{rel}: {imported}")
 
@@ -126,11 +118,13 @@ def test_api_may_only_import_narrow_provider_facade() -> None:
     assert sorted(offenders) == []
 
 
-def test_removed_openrouter_rollback_transport_stays_removed() -> None:
+def test_removed_rollback_transport_stays_removed() -> None:
     repo_root = Path(__file__).resolve().parents[2]
 
-    assert not (repo_root / "providers" / "open_router" / "chat_request.py").exists()
-    assert _text_occurrences(repo_root, "OpenRouter" + "ChatProvider") == []
+    assert not (
+        repo_root / "providers" / ("open" + "_router") / "chat_request.py"
+    ).exists()
+    assert _text_occurrences(repo_root, "Open" + "Router" + "ChatProvider") == []
     assert _text_occurrences(repo_root, "OPENROUTER" + "_TRANSPORT") == []
 
 

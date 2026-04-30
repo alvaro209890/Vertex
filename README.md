@@ -6,7 +6,7 @@ Standalone Vertex CLI app with a bundled OpenClaude-derived tool runtime and a
 local DeepSeek proxy.
 
 ```bash
-pipx install vertex-deepseek
+pipx install --force git+https://github.com/alvaro209890/Vertex.git
 vertex         # first run prompts for your DeepSeek API key
 ```
 
@@ -14,7 +14,7 @@ vertex         # first run prompts for your DeepSeek API key
 
 ## What You Get
 
-- One-command setup: `pipx install vertex-deepseek` then `vertex`
+- One-command setup: `pipx install --force git+https://github.com/alvaro209890/Vertex.git` then `vertex`
 - Standalone `vertex` app; no external `openclaude` command is required
 - First run prompts for your DeepSeek API key interactively
 - `vertex-proxy` is a proxy-only support command; normal users run `vertex`
@@ -30,19 +30,19 @@ vertex         # first run prompts for your DeepSeek API key
 
 **macOS / Linux (recommended):**
 ```bash
-pipx install vertex-deepseek
+pipx install --force git+https://github.com/alvaro209890/Vertex.git
 ```
 
 **Linux (Ubuntu/Debian) — install pipx first if needed:**
 ```bash
 sudo apt install pipx
 pipx ensurepath
-pipx install vertex-deepseek
+pipx install --force git+https://github.com/alvaro209890/Vertex.git
 ```
 
 **Alternative (any OS with virtualenv):**
 ```bash
-pip install vertex-deepseek
+pip install git+https://github.com/alvaro209890/Vertex.git
 ```
 > Ubuntu 24.04+ blocks `pip install` outside a virtualenv (PEP 668).
 > Use `pipx` instead, or create a venv first.
@@ -118,7 +118,7 @@ deepseek/model/name
 ```
 
 `MODEL` is the fallback. `MODEL_OPUS`, `MODEL_SONNET`, and `MODEL_HAIKU`
-override routing for requests that Claude Code sends for those tiers, but only
+override routing for Claude-compatible requests that arrive for those tiers, but only
 `deepseek/...` values are honored. Any non-DeepSeek model value is ignored by the
 runtime and replaced with `deepseek/deepseek-v4-flash`.
 
@@ -184,25 +184,25 @@ Restart the IDE after changing the file.
 
 ### Model Picker
 
-`claude-pick` lets legacy Claude-compatible clients choose a model at launch time.
+`claude-pick` lets legacy Claude-compatible clients choose a DeepSeek model at launch time.
 
 ```bash
 brew install fzf
-alias claude-pick="/absolute/path/to/free-claude-code/claude-pick"
+alias claude-pick="/absolute/path/to/Vertex/claude-pick"
 claude-pick
 ```
 
 You can also create fixed aliases:
 
 ```bash
-alias claude-kimi='ANTHROPIC_BASE_URL="http://localhost:8083" ANTHROPIC_AUTH_TOKEN="freecc:moonshotai/kimi-k2.5" claude'
+alias claude-deepseek-pro='ANTHROPIC_BASE_URL="http://localhost:8083" ANTHROPIC_AUTH_TOKEN="freecc:deepseek/deepseek-v4-pro" claude'
 ```
 
 ## Optional Integrations
 
 ### Discord And Telegram Bots
 
-The bot wrapper runs Claude Code sessions remotely, streams progress, supports reply-based conversation branches, and can stop or clear tasks.
+The bot wrapper runs Vertex CLI sessions remotely, streams progress, supports reply-based conversation branches, and can stop or clear tasks.
 
 Discord minimum config:
 
@@ -315,7 +315,7 @@ These tools perform outbound HTTP from the proxy. Keep private-network access di
 
 ## Troubleshooting
 
-### Claude Code says `undefined ... input_tokens`, `$.speed`, or malformed response
+### Vertex CLI says `undefined ... input_tokens`, `$.speed`, or malformed response
 
 Update to the latest commit first. Older versions could emit invalid usage metadata in streaming responses. Then check:
 
@@ -352,18 +352,18 @@ DeepSeek Anthropic Messages API
 Important pieces:
 
 - FastAPI exposes Anthropic-compatible routes such as `/v1/messages`, `/v1/messages/count_tokens`, and `/v1/models`.
-- Model routing resolves the Claude model name to `MODEL_OPUS`, `MODEL_SONNET`, `MODEL_HAIKU`, or `MODEL`.
+- Model routing resolves the incoming compatibility model name to `MODEL_OPUS`, `MODEL_SONNET`, `MODEL_HAIKU`, or `MODEL`.
 - Non-DeepSeek `MODEL*` values are ignored so installed clients cannot route chat to another provider.
 - DeepSeek uses Anthropic Messages style transport.
-- The proxy normalizes thinking blocks, tool calls, token usage metadata, and provider errors into the shape Claude Code expects.
-- Request optimizations answer trivial Claude Code probes locally to save latency and quota.
+- The proxy normalizes thinking blocks, tool calls, token usage metadata, and provider errors into the shape Anthropic-compatible clients expect.
+- Request optimizations answer trivial client probes locally to save latency and quota.
 
 ## Development
 
 ### Project Structure
 
 ```text
-free-claude-code/
+Vertex/
 ├── server.py              # ASGI entry point
 ├── api/                   # FastAPI routes, service layer, routing, optimizations
 ├── core/                  # Shared Anthropic protocol helpers and SSE utilities
@@ -394,14 +394,12 @@ Run them in that order before pushing. CI enforces the same checks.
 
 ### Extending
 
-- Add OpenAI-compatible providers by extending `OpenAIChatTransport`.
-- Add Anthropic Messages providers by extending `AnthropicMessagesTransport`.
-- Register provider metadata in `config.provider_catalog` and factory wiring in `providers.registry`.
+- Keep provider metadata in `config.provider_catalog` and factory wiring in `providers.registry`.
 - Add messaging platforms by implementing the `MessagingPlatform` interface in `messaging/`.
 
 ## Contributing
 
-- Report bugs and feature requests in [Issues](https://github.com/Alishahryar1/free-claude-code/issues).
+- Report bugs and feature requests in [Issues](https://github.com/alvaro209890/Vertex/issues).
 - Keep changes small and covered by focused tests.
 - Do not open Docker integration PRs.
 - Do not open README change PRs just open an issue for it.

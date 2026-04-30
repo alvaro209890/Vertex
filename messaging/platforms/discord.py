@@ -97,7 +97,6 @@ class DiscordPlatform(MessagingPlatform):
         whisper_model: str = "base",
         whisper_device: str = "cpu",
         hf_token: str = "",
-        nvidia_nim_api_key: str = "",
         messaging_rate_limit: int = 1,
         messaging_rate_window: float = 1.0,
         log_raw_messaging_content: bool = False,
@@ -129,7 +128,6 @@ class DiscordPlatform(MessagingPlatform):
         self._pending_voice = PendingVoiceRegistry()
         self._voice_transcription = VoiceTranscriptionService(
             hf_token=hf_token,
-            nvidia_nim_api_key=nvidia_nim_api_key,
         )
         self._voice_note_enabled = voice_note_enabled
         self._whisper_model = whisper_model

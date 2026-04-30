@@ -242,19 +242,16 @@ def _ensure_vertex_cli_settings(port: str) -> None:
     raw_env = settings.get("env")
     env: dict[str, Any] = dict(raw_env) if isinstance(raw_env, dict) else {}
     for key in (
-        "NVIDIA_NIM_API_KEY",
-        "OPENROUTER_API_KEY",
-        "OPENAI_API_KEY",
-        "OPENAI_API_BASE",
-        "OPENAI_BASE_URL",
-        "OPENAI_MODEL",
         "CLAUDE_CODE_USE_OPENAI",
         "CLAUDE_CODE_USE_GEMINI",
         "CLAUDE_CODE_USE_MISTRAL",
         "CLAUDE_CODE_USE_GITHUB",
         "CLAUDE_CODE_USE_BEDROCK",
         "CLAUDE_CODE_USE_VERTEX",
-        "OPENCLAUDE_EXTRA_MODEL_OPTIONS",
+        "OPENAI_API_KEY",
+        "OPENAI_BASE_URL",
+        "OPENAI_API_BASE",
+        "OPENAI_MODEL",
     ):
         env.pop(key, None)
     env.update(_managed_vertex_cli_env(port))
@@ -382,11 +379,6 @@ def cli() -> None:
         "CLAUDE_CODE_USE_GITHUB",
         "CLAUDE_CODE_USE_BEDROCK",
         "CLAUDE_CODE_USE_VERTEX",
-        "OPENAI_API_BASE",
-        "OPENAI_API_KEY",
-        "OPENAI_BASE_URL",
-        "OPENAI_MODEL",
-        "OPENCLAUDE_EXTRA_MODEL_OPTIONS",
     ):
         env.pop(key, None)
     env["CLAUDE_CONFIG_DIR"] = str(VERTEX_CLI_CONFIG_DIR)

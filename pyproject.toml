@@ -50,11 +50,6 @@ vertex-proxy = "cli.entrypoints:serve"
 vertex-init = "cli.entrypoints:init"
 
 [project.optional-dependencies]
-voice = [
-    "grpcio>=1.80.0",
-    "grpcio-tools>=1.80.0",
-    "nvidia-riva-client>=2.25.1",
-]
 voice_local = [
     "torch>=2.11.0",
     "transformers>=5.6.2",
@@ -141,5 +136,4 @@ python-version = "3.14"
 
 [tool.ty.analysis]
 # Optional voice_local extra: torch, transformers, librosa for local whisper transcription
-# Optional voice extra: nvidia-riva-client for nvidia_nim transcription provider
-allowed-unresolved-imports = ["torch", "transformers", "librosa", "riva.client"]
+allowed-unresolved-imports = ["torch", "transformers", "librosa"]

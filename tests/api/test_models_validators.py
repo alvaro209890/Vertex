@@ -16,7 +16,7 @@ def test_messages_request_ignores_internal_routing_fields_when_supplied():
         {
             "model": "target-model",
             "original_model": "claude-3-opus",
-            "resolved_provider_model": "nvidia_nim/target-model",
+            "resolved_provider_model": "deepseek/target-model",
             "max_tokens": 100,
             "messages": [{"role": "user", "content": "hello"}],
         }

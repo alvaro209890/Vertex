@@ -535,7 +535,7 @@ class ClaudeMessageHandler:
             return self.format_status("🔄", "Continuing conversation...")
 
         # New conversation
-        return self.format_status("⏳", "Launching new Claude CLI instance...")
+        return self.format_status("⏳", "Launching new Vertex CLI instance...")
 
     async def stop_all_tasks(self) -> int:
         """

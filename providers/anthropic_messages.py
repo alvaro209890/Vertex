@@ -66,7 +66,8 @@ class AnthropicMessagesTransport(BaseProvider):
 
     async def cleanup(self) -> None:
         """Release HTTP client resources."""
-        await self._client.aclose()
+        if hasattr(self, "_client") and self._client is not None:
+            await self._client.aclose()
 
     def _request_headers(self) -> dict[str, str]:
         """Return headers for the native messages request."""
