@@ -219,7 +219,7 @@ def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
     assert settings["env"]["ANTHROPIC_AUTH_TOKEN"] == "freecc"
     assert settings["env"]["DISABLE_LOGIN_COMMAND"] == "1"
     assert settings["env"]["OPENAI_API_KEY"] == "old-openai-key"
-    assert settings["model"] == "deepseek/deepseek-v4-pro"
+    assert settings["model"] == "deepseek/deepseek-v4-flash"
     assert settings["customSetting"] is True
     assert "provider" not in settings
 

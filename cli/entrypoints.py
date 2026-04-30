@@ -11,13 +11,13 @@ CONFIG_DIR = Path.home() / ".config" / "vertex"
 ENV_FILE = CONFIG_DIR / ".env"
 VERTEX_CLI_CONFIG_DIR = Path.home() / ".vertex"
 VERTEX_CLI_SETTINGS_FILE = VERTEX_CLI_CONFIG_DIR / "settings.json"
-DEFAULT_MODEL = "deepseek/deepseek-v4-pro"
+DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
 MANAGED_VERTEX_CLI_ENV = {
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:{port}",
     "ANTHROPIC_AUTH_TOKEN": "freecc",
     "DISABLE_LOGIN_COMMAND": "1",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek/deepseek-v4-pro",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "DeepSeek V4 Pro",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek/deepseek-v4-flash",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "DeepSeek V4 Flash",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek/deepseek-v4-flash",
     "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "DeepSeek V4 Flash",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek/deepseek-v4-flash",

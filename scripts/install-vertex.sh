@@ -68,15 +68,15 @@ cat > "$SETTINGS_FILE" << 'JSONEOF'
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:8083",
     "ANTHROPIC_AUTH_TOKEN": "freecc",
     "DISABLE_LOGIN_COMMAND": "1",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek/deepseek-v4-pro",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "DeepSeek V4 Pro",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek/deepseek-v4-flash",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "DeepSeek V4 Flash",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek/deepseek-v4-flash",
     "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "DeepSeek V4 Flash",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek/deepseek-v4-flash",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": "DeepSeek V4 Flash"
   },
   "skipDangerousModePermissionPrompt": true,
-  "model": "deepseek/deepseek-v4-pro"
+  "model": "deepseek/deepseek-v4-flash"
 }
 JSONEOF
 echo "Settings written for DeepSeek"

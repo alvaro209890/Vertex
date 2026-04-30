@@ -20,7 +20,7 @@ vertex         # first run prompts for your DeepSeek API key
 - `vertex-proxy` is a proxy-only support command; normal users run `vertex`
 - Bundled agent/tool runtime derived from OpenClaude
 - DeepSeek-native backend with Anthropic-compatible Messages API
-- Per-model routing: Opus → v4-pro, Sonnet/Haiku → v4-flash
+- Per-model routing: Opus/Sonnet/Haiku → v4-flash by default
 - Streaming, tool use, reasoning/thinking block handling
 - Change API key anytime: `vertex --logout`
 
@@ -144,12 +144,12 @@ Get a key at [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_
 
 ```dotenv
 DEEPSEEK_API_KEY="your-deepseek-key"
-MODEL="deepseek/deepseek-v4-pro"
+MODEL="deepseek/deepseek-v4-flash"
 ```
 
 Available models:
-- `deepseek/deepseek-v4-pro` — Full reasoning (thinking mode)
 - `deepseek/deepseek-v4-flash` — Fast responses (non-thinking mode)
+- `deepseek/deepseek-v4-pro` — Full reasoning (thinking mode)
 - `deepseek/deepseek-chat` — Legacy (deprecated 2026/07/24 → maps to v4-flash)
 - `deepseek/deepseek-reasoner` — Legacy (deprecated 2026/07/24 → maps to v4-flash thinking)
 
