@@ -10,13 +10,6 @@ CONFIG_DIR = Path.home() / ".config" / "vertex"
 ENV_FILE = CONFIG_DIR / ".env"
 VERTEX_CLI_CONFIG_DIR = Path.home() / ".vertex"
 VERTEX_CLI_SETTINGS_FILE = VERTEX_CLI_CONFIG_DIR / "settings.json"
-LEGACY_PROVIDER_ENV_KEYS = (
-    "CLAUDE_CODE_USE_OPENAI",
-    "OPENAI_API_BASE",
-    "OPENAI_BASE_URL",
-    "OPENAI_MODEL",
-    "OPENCLAUDE_EXTRA_MODEL_OPTIONS",
-)
 
 
 def _load_env_template() -> str:
@@ -42,10 +35,6 @@ def _needs_api_key() -> bool:
         values = dotenv_values(ENV_FILE)
         if values.get("DEEPSEEK_API_KEY", "").strip():
             return False
-    if os.environ.get("DEEPSEEK_API_KEY", "").strip() and not any(
-        os.environ.get(key, "").strip() for key in LEGACY_PROVIDER_ENV_KEYS
-    ):
-        return False
     return True
 
 
