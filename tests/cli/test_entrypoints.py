@@ -167,4 +167,155 @@ def test_cli_creates_default_vertex_settings(tmp_path: Path) -> None:
     settings = json.loads(settings_file.read_text(encoding="utf-8"))
     assert settings["env"]["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:8083"
     assert settings["env"]["ANTHROPIC_AUTH_TOKEN"] == "freecc"
+    assert settings["env"]["DISABLE_LOGIN_COMMAND"] == "1"
     assert settings["skipDangerousModePermissionPrompt"] is True
+
+
+def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
+    """cli() forces managed Vertex/DeepSeek settings over stale provider config."""
+    import json
+    import sys
+
+    from cli import entrypoints
+
+    vertex_bin = tmp_path / "vertex"
+    vertex_bin.write_text("#!/usr/bin/env node\n", encoding="utf-8")
+    node_bin = tmp_path / "node"
+    node_bin.write_text("", encoding="utf-8")
+    settings_file = tmp_path / ".vertex" / "settings.json"
+    settings_file.parent.mkdir(parents=True)
+    settings_file.write_text(
+        json.dumps(
+            {
+                "env": {
+                    "ANTHROPIC_BASE_URL": "https://api.anthropic.com",
+                    "OPENAI_API_KEY": "old-openai-key",
+                },
+                "model": "nvidia_nim/z-ai/glm4.7",
+                "provider": "openclaude",
+                "customSetting": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with (
+        patch.object(entrypoints, "_run_wizard_if_needed"),
+        patch.object(entrypoints, "_start_proxy", return_value=True),
+        patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
+        patch.object(entrypoints, "VERTEX_CLI_CONFIG_DIR", settings_file.parent),
+        patch.object(entrypoints, "VERTEX_CLI_SETTINGS_FILE", settings_file),
+        patch.dict(os.environ, {"VERTEX_CLI_BIN": str(vertex_bin)}, clear=False),
+        patch.object(sys, "argv", ["vertex", "--version"]),
+        patch("subprocess.run") as run,
+        patch("sys.exit", side_effect=SystemExit),
+        suppress(SystemExit),
+    ):
+        run.return_value.returncode = 0
+        entrypoints.cli()
+
+    settings = json.loads(settings_file.read_text(encoding="utf-8"))
+    assert settings["env"]["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:8083"
+    assert settings["env"]["ANTHROPIC_AUTH_TOKEN"] == "freecc"
+    assert settings["env"]["DISABLE_LOGIN_COMMAND"] == "1"
+    assert settings["env"]["OPENAI_API_KEY"] == "old-openai-key"
+    assert settings["model"] == "deepseek/deepseek-v4-pro"
+    assert settings["customSetting"] is True
+    assert "provider" not in settings
+
+
+def test_cli_logout_updates_deepseek_key_before_auto_wizard(tmp_path: Path) -> None:
+    """`vertex /logout` updates the DeepSeek key even when the old key is empty."""
+    import sys
+
+    from cli import entrypoints
+
+    env_file = tmp_path / ".config" / "vertex" / ".env"
+    env_file.parent.mkdir(parents=True)
+    env_file.write_text('DEEPSEEK_API_KEY=""\n', encoding="utf-8")
+    printed: list[str] = []
+
+    with (
+        patch.object(entrypoints, "ENV_FILE", env_file),
+        patch.object(sys, "argv", ["vertex", "/logout"]),
+        patch("builtins.input", return_value="sk-new-deepseek"),
+        patch(
+            "builtins.print",
+            side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
+        ),
+        patch("subprocess.run") as run,
+    ):
+        entrypoints.cli()
+
+    run.assert_not_called()
+    assert 'DEEPSEEK_API_KEY="sk-new-deepseek"' in env_file.read_text(encoding="utf-8")
+    assert "DeepSeek API key updated." in "\n".join(printed)
+
+
+def test_cli_auth_login_maps_to_deepseek_key_setup(tmp_path: Path) -> None:
+    """`vertex auth login` is API-key setup, not Anthropic OAuth."""
+    import sys
+
+    from cli import entrypoints
+
+    env_file = tmp_path / ".config" / "vertex" / ".env"
+    env_file.parent.mkdir(parents=True)
+    env_file.write_text('DEEPSEEK_API_KEY="old"\n', encoding="utf-8")
+
+    with (
+        patch.object(entrypoints, "ENV_FILE", env_file),
+        patch.object(sys, "argv", ["vertex", "auth", "login"]),
+        patch("builtins.input", return_value="sk-deepseek-next"),
+        patch("subprocess.run") as run,
+    ):
+        entrypoints.cli()
+
+    run.assert_not_called()
+    assert 'DEEPSEEK_API_KEY="sk-deepseek-next"' in env_file.read_text(encoding="utf-8")
+
+
+def test_cli_auth_status_reports_deepseek_key_status(tmp_path: Path) -> None:
+    """`vertex auth status` reports DeepSeek API-key status, not Anthropic auth."""
+    import sys
+
+    from cli import entrypoints
+
+    env_file = tmp_path / ".config" / "vertex" / ".env"
+    env_file.parent.mkdir(parents=True)
+    env_file.write_text('DEEPSEEK_API_KEY="sk-configured"\n', encoding="utf-8")
+    printed: list[str] = []
+
+    with (
+        patch.object(entrypoints, "ENV_FILE", env_file),
+        patch.object(sys, "argv", ["vertex", "auth", "status"]),
+        patch(
+            "builtins.print",
+            side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
+        ),
+        patch("subprocess.run") as run,
+    ):
+        entrypoints.cli()
+
+    run.assert_not_called()
+    assert "\n".join(printed) == "DeepSeek API key: configured"
+
+
+def test_cli_blocks_anthropic_setup_token() -> None:
+    """The Anthropic token/OAuth setup command is not reachable through vertex."""
+    import sys
+
+    from cli import entrypoints
+
+    printed: list[str] = []
+    with (
+        patch.object(sys, "argv", ["vertex", "setup-token"]),
+        patch(
+            "builtins.print",
+            side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
+        ),
+        patch("subprocess.run") as run,
+    ):
+        entrypoints.cli()
+
+    run.assert_not_called()
+    assert "Anthropic account login is disabled in Vertex." in "\n".join(printed)

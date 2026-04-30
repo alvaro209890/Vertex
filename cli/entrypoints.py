@@ -5,11 +5,36 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 CONFIG_DIR = Path.home() / ".config" / "vertex"
 ENV_FILE = CONFIG_DIR / ".env"
 VERTEX_CLI_CONFIG_DIR = Path.home() / ".vertex"
 VERTEX_CLI_SETTINGS_FILE = VERTEX_CLI_CONFIG_DIR / "settings.json"
+DEFAULT_MODEL = "deepseek/deepseek-v4-pro"
+MANAGED_VERTEX_CLI_ENV = {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:{port}",
+    "ANTHROPIC_AUTH_TOKEN": "freecc",
+    "DISABLE_LOGIN_COMMAND": "1",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek/deepseek-v4-pro",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "DeepSeek V4 Pro",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek/deepseek-v4-flash",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "DeepSeek V4 Flash",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek/deepseek-v4-flash",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": "DeepSeek V4 Flash",
+}
+API_AUTH_COMMANDS = {
+    ("auth", "login"),
+    ("auth", "logout"),
+    ("login",),
+    ("logout",),
+}
+API_AUTH_FLAGS = {"/login", "/logout", "--login", "--logout"}
+
+
+def _env_value_is_set(value: str | None) -> bool:
+    """Return whether a dotenv value contains non-whitespace text."""
+    return bool((value or "").strip())
 
 
 def _load_env_template() -> str:
@@ -33,7 +58,7 @@ def _needs_api_key() -> bool:
 
     if ENV_FILE.is_file():
         values = dotenv_values(ENV_FILE)
-        if values.get("DEEPSEEK_API_KEY", "").strip():
+        if _env_value_is_set(values.get("DEEPSEEK_API_KEY")):
             return False
     return True
 
@@ -47,31 +72,131 @@ def _run_wizard_if_needed() -> None:
     run_setup_wizard(ENV_FILE)
 
 
-def _ensure_vertex_cli_settings(port: str) -> None:
-    """Create default Vertex CLI settings without overwriting user settings."""
-    if VERTEX_CLI_SETTINGS_FILE.exists():
-        return
+def _is_api_key_setup_request(argv: list[str] | None = None) -> bool:
+    """Return whether CLI args request DeepSeek API key setup."""
+    args = list(sys.argv[1:] if argv is None else argv[1:])
+    lowered = [arg.lower() for arg in args]
+    if any(arg in API_AUTH_FLAGS for arg in lowered):
+        return True
+    return (
+        tuple(lowered[:2]) in API_AUTH_COMMANDS
+        or tuple(lowered[:1]) in API_AUTH_COMMANDS
+    )
 
+
+def _is_anthropic_token_setup_request(argv: list[str] | None = None) -> bool:
+    """Return whether args request an Anthropic-only token flow."""
+    args = list(sys.argv[1:] if argv is None else argv[1:])
+    return bool(args and args[0].lower() == "setup-token")
+
+
+def _is_api_key_status_request(argv: list[str] | None = None) -> bool:
+    """Return whether CLI args request auth status."""
+    args = list(sys.argv[1:] if argv is None else argv[1:])
+    lowered = [arg.lower() for arg in args]
+    return tuple(lowered[:2]) == ("auth", "status")
+
+
+def _handle_api_key_setup_request(*, restart_message: bool) -> bool:
+    """Handle login/logout aliases with the only supported login: DeepSeek API key."""
+    if not _is_api_key_setup_request():
+        return False
+
+    from cli.setup_wizard import run_setup_wizard
+
+    run_setup_wizard(ENV_FILE)
+    if restart_message:
+        print("DeepSeek API key updated. Restart Vertex to apply changes.")
+    else:
+        print("DeepSeek API key updated.")
+    return True
+
+
+def _handle_disabled_anthropic_token_setup() -> bool:
+    """Block Anthropic OAuth token setup from the Vertex entrypoint."""
+    if not _is_anthropic_token_setup_request():
+        return False
+    print("Anthropic account login is disabled in Vertex.")
+    print("Use `vertex /logout` or `vertex auth login` to set a DeepSeek API key.")
+    return True
+
+
+def _handle_api_key_status_request() -> bool:
+    """Report DeepSeek API key status without invoking Anthropic auth status."""
+    if not _is_api_key_status_request():
+        return False
+
+    from dotenv import dotenv_values
+
+    configured = False
+    if ENV_FILE.is_file():
+        configured = _env_value_is_set(dotenv_values(ENV_FILE).get("DEEPSEEK_API_KEY"))
+
+    if "--json" in sys.argv:
+        import json
+
+        print(
+            json.dumps(
+                {
+                    "loggedIn": configured,
+                    "authMethod": "deepseek_api_key" if configured else "none",
+                    "apiProvider": "deepseek",
+                },
+                indent=2,
+            )
+        )
+    elif configured:
+        print("DeepSeek API key: configured")
+    else:
+        print("DeepSeek API key: not configured")
+        print("Run `vertex auth login` to set a DeepSeek API key.")
+    return True
+
+
+def _ensure_vertex_cli_settings(port: str) -> None:
+    """Create/update Vertex CLI settings owned by this wrapper."""
     import json
 
     VERTEX_CLI_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    settings = {
-        "env": {
-            "ANTHROPIC_BASE_URL": f"http://127.0.0.1:{port}",
-            "ANTHROPIC_AUTH_TOKEN": "freecc",
-            "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek/deepseek-v4-pro",
-            "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "DeepSeek V4 Pro",
-            "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek/deepseek-v4-flash",
-            "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "DeepSeek V4 Flash",
-            "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek/deepseek-v4-flash",
-            "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": "DeepSeek V4 Flash",
-        },
-        "skipDangerousModePermissionPrompt": True,
-        "model": "deepseek/deepseek-v4-pro",
-    }
+
+    settings: dict[str, Any] = {}
+    if VERTEX_CLI_SETTINGS_FILE.exists():
+        try:
+            raw_settings = json.loads(VERTEX_CLI_SETTINGS_FILE.read_text("utf-8"))
+            if isinstance(raw_settings, dict):
+                settings = raw_settings
+        except json.JSONDecodeError:
+            settings = {}
+
+    raw_env = settings.get("env")
+    env: dict[str, Any] = dict(raw_env) if isinstance(raw_env, dict) else {}
+    env.update(
+        {key: value.format(port=port) for key, value in MANAGED_VERTEX_CLI_ENV.items()}
+    )
+    settings.update(
+        {
+            "env": env,
+            "skipDangerousModePermissionPrompt": True,
+            "model": DEFAULT_MODEL,
+        }
+    )
+    for key in (
+        "provider",
+        "providerProfile",
+        "provider_profile",
+        "apiProvider",
+    ):
+        settings.pop(key, None)
     VERTEX_CLI_SETTINGS_FILE.write_text(
         json.dumps(settings, indent=2) + "\n", encoding="utf-8"
     )
+
+
+def _managed_vertex_cli_env(port: str) -> dict[str, str]:
+    """Return environment values that force the vendored CLI through Vertex."""
+    return {
+        key: value.format(port=port) for key, value in MANAGED_VERTEX_CLI_ENV.items()
+    }
 
 
 def _vertex_cli_bin() -> Path:
@@ -141,18 +266,14 @@ def cli() -> None:
     """Launch Vertex CLI: ensure proxy is running, open the vendored CLI runtime."""
     import subprocess
 
-    _run_wizard_if_needed()
-
-    # Handle logout
-    if "--logout" in sys.argv or "/logout" in sys.argv:
-        if ENV_FILE.exists():
-            from cli.setup_wizard import run_setup_wizard
-
-            run_setup_wizard(ENV_FILE)
-            print("API key updated.")
-            return
-        print("No config found. Run: vertex-init")
+    if _handle_api_key_setup_request(restart_message=False):
         return
+    if _handle_api_key_status_request():
+        return
+    if _handle_disabled_anthropic_token_setup():
+        return
+
+    _run_wizard_if_needed()
 
     vertex_cli = _vertex_cli_bin()
     if not vertex_cli.is_file():
@@ -190,14 +311,7 @@ def cli() -> None:
     ):
         env.pop(key, None)
     env["CLAUDE_CONFIG_DIR"] = str(VERTEX_CLI_CONFIG_DIR)
-    env["ANTHROPIC_BASE_URL"] = f"http://127.0.0.1:{port}"
-    env["ANTHROPIC_AUTH_TOKEN"] = "freecc"
-    env["ANTHROPIC_DEFAULT_OPUS_MODEL"] = "deepseek/deepseek-v4-pro"
-    env["ANTHROPIC_DEFAULT_OPUS_MODEL_NAME"] = "DeepSeek V4 Pro"
-    env["ANTHROPIC_DEFAULT_SONNET_MODEL"] = "deepseek/deepseek-v4-flash"
-    env["ANTHROPIC_DEFAULT_SONNET_MODEL_NAME"] = "DeepSeek V4 Flash"
-    env["ANTHROPIC_DEFAULT_HAIKU_MODEL"] = "deepseek/deepseek-v4-flash"
-    env["ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME"] = "DeepSeek V4 Flash"
+    env.update(_managed_vertex_cli_env(port))
 
     # Launch Vertex CLI
     print("Launching Vertex CLI...")
@@ -211,14 +325,11 @@ def cli() -> None:
 
 def serve() -> None:
     """Start the FastAPI server (registered as `vertex-proxy` script)."""
-    if "--logout" in sys.argv or "/logout" in sys.argv:
-        if ENV_FILE.exists():
-            from cli.setup_wizard import run_setup_wizard
-
-            run_setup_wizard(ENV_FILE)
-            print("API key updated. Restart Vertex to apply changes.")
-            return
-        print("No config found. Run: vertex-init")
+    if _handle_api_key_setup_request(restart_message=True):
+        return
+    if _handle_api_key_status_request():
+        return
+    if _handle_disabled_anthropic_token_setup():
         return
 
     import uvicorn

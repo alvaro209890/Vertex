@@ -2,13 +2,12 @@
 
 # 🔷 Vertex
 
-Standalone Vertex CLI with a bundled OpenClaude-derived tool runtime and local
-Anthropic-compatible proxy.
+Standalone Vertex CLI app with a bundled OpenClaude-derived tool runtime and a
+local DeepSeek proxy.
 
 ```bash
 pipx install vertex-deepseek
-vertex-init    # first run: prompts for your DeepSeek API key
-vertex         # open the Vertex CLI app
+vertex         # first run prompts for your DeepSeek API key
 ```
 
 </div>
@@ -18,6 +17,7 @@ vertex         # open the Vertex CLI app
 - One-command setup: `pipx install vertex-deepseek` then `vertex`
 - Standalone `vertex` app; no external `openclaude` command is required
 - First run prompts for your DeepSeek API key interactively
+- `vertex-proxy` is a proxy-only support command; normal users run `vertex`
 - Bundled agent/tool runtime derived from OpenClaude
 - DeepSeek-native backend with Anthropic-compatible Messages API
 - Per-model routing: Opus → v4-pro, Sonnet/Haiku → v4-flash
@@ -51,14 +51,12 @@ Requires Python 3.12+ and Node.js 20+.
 
 ### 2. Configure
 
-```bash
-vertex-init
-```
-
-This creates `~/.config/vertex/.env` and asks for your DeepSeek API key.
+Run `vertex`. If `~/.config/vertex/.env` is missing or `DEEPSEEK_API_KEY` is
+empty, Vertex asks for your DeepSeek API key and saves it.
 Get one at [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys).
 
-To change the key later: `vertex --logout`
+`vertex-init` is optional; it only pre-creates the config file. To change the key
+later: `vertex /logout` or `vertex auth login`.
 
 ### 3. Open Vertex
 
@@ -68,6 +66,11 @@ vertex
 
 That's it. `vertex` starts the local proxy if needed and opens the bundled
 Vertex CLI runtime.
+
+Internally, the CLI sends Anthropic Messages API traffic to
+`http://127.0.0.1:8083`, and the local proxy routes it to DeepSeek. Anthropic
+account login is disabled; the only supported login state is the DeepSeek API
+key.
 
 ### 4. Proxy-Only Mode
 

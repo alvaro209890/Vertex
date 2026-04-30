@@ -1,0 +1,131 @@
+diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
+index 7cb44245..c3bc5e75 100644
+--- a/vendor/vertex-cli/dist/cli.mjs
++++ b/vendor/vertex-cli/dist/cli.mjs
+@@ -275083,11 +275083,33 @@ async function clearAuthRelatedCaches() {
+   await clearPolicyLimitsCache();
+ }
+ async function call() {
+-  await performLogout({
+-    clearOnboarding: true
++  const { readFile, writeFile, mkdir } = await import("fs/promises");
++  const { homedir } = await import("os");
++  const { join } = await import("path");
++  const configDir = join(homedir(), ".config", "vertex");
++  const envPath = join(configDir, ".env");
++  await mkdir(configDir, { recursive: true });
++  let content = "";
++  try {
++    content = await readFile(envPath, "utf-8");
++  } catch {
++  }
++  const keyLine = 'DEEPSEEK_API_KEY=""';
++  const lines = content.split(/\r?\n/);
++  let replaced = false;
++  const nextLines = lines.filter((line, index) => index < lines.length - 1 || line !== "").map((line) => {
++    if (line.trim().startsWith("DEEPSEEK_API_KEY=")) {
++      replaced = true;
++      return keyLine;
++    }
++    return line;
+   });
++  if (!replaced) {
++    nextLines.push("# Vertex DeepSeek API key", keyLine);
++  }
++  await writeFile(envPath, `${nextLines.join("\n")}\n`, "utf-8");
+   const message = /* @__PURE__ */ jsx_dev_runtime61.jsxDEV(ThemedText, {
+-    children: "Successfully logged out from your Anthropic account."
++    children: "DeepSeek API key cleared. Restart Vertex to enter a new key."
+   }, undefined, false, undefined, this);
+   setTimeout(() => {
+     gracefulShutdownSync(0, "logout");
+@@ -422708,7 +422730,7 @@ var init_keybindings2 = __esm(() => {
+ var login_default = () => ({
+   type: "local-jsx",
+   name: "login",
+-  description: hasAnthropicApiKeyAuth() ? "Switch Anthropic accounts" : "Sign in with your Anthropic account",
++  description: "Disabled: use /logout to reset the DeepSeek API key",
+   isEnabled: () => !isEnvTruthy(process.env.DISABLE_LOGIN_COMMAND),
+   load: () => Promise.resolve().then(() => (init_login(), exports_login))
+ });
+@@ -422724,7 +422746,7 @@ var init_logout2 = __esm(() => {
+   logout_default = {
+     type: "local-jsx",
+     name: "logout",
+-    description: "Sign out from your Anthropic account",
++    description: "Clear the DeepSeek API key",
+     isEnabled: () => !isEnvTruthy(process.env.DISABLE_LOGOUT_COMMAND),
+     load: () => Promise.resolve().then(() => (init_logout(), exports_logout))
+   };
+@@ -571390,33 +571412,34 @@ Usage: vertex --remote "your task description"`, () => gracefulShutdown(1));
+   if (false) {}
+   if (false) {}
+   const auth2 = program2.command("auth").description("Manage authentication").configureHelp(createSortedHelpConfig());
+-  auth2.command("login").description("Sign in to your Anthropic account").option("--email <email>", "Pre-populate email address on the login page").option("--sso", "Force SSO login flow").option("--console", "Use Anthropic Console (API usage billing) instead of Claude subscription").option("--claudeai", "Use Claude subscription (default)").action(async ({
++  auth2.command("login").description("Configure the DeepSeek API key").option("--email <email>", "Ignored by Vertex").option("--sso", "Ignored by Vertex").option("--console", "Ignored by Vertex").option("--claudeai", "Ignored by Vertex").action(async ({
+     email: email3,
+     sso,
+     console: useConsole,
+     claudeai
+   }) => {
+-    const {
+-      authLogin: authLogin2
+-    } = await Promise.resolve().then(() => (init_auth6(), exports_auth2));
+-    await authLogin2({
+-      email: email3,
+-      sso,
+-      console: useConsole,
+-      claudeai
+-    });
++    void email3;
++    void sso;
++    void useConsole;
++    void claudeai;
++    process.stderr.write("Anthropic account login is disabled in Vertex. Use `vertex auth login` through the Python entrypoint to set a DeepSeek API key.\n");
++    process.exit(1);
+   });
+   auth2.command("status").description("Show authentication status").option("--json", "Output as JSON (default)").option("--text", "Output as human-readable text").action(async (opts) => {
+-    const {
+-      authStatus: authStatus2
+-    } = await Promise.resolve().then(() => (init_auth6(), exports_auth2));
+-    await authStatus2(opts);
++    if (opts?.json !== false && !opts?.text) {
++      process.stdout.write(JSON.stringify({
++        loggedIn: Boolean(process.env.DEEPSEEK_API_KEY),
++        authMethod: process.env.DEEPSEEK_API_KEY ? "deepseek_api_key" : "none",
++        apiProvider: "deepseek"
++      }, null, 2) + "\n");
++    } else {
++      process.stdout.write(process.env.DEEPSEEK_API_KEY ? "DeepSeek API key: configured\n" : "DeepSeek API key: not configured\n");
++    }
++    process.exit(process.env.DEEPSEEK_API_KEY ? 0 : 1);
+   });
+-  auth2.command("logout").description("Log out from your Anthropic account").action(async () => {
+-    const {
+-      authLogout: authLogout2
+-    } = await Promise.resolve().then(() => (init_auth6(), exports_auth2));
+-    await authLogout2();
++  auth2.command("logout").description("Configure the DeepSeek API key").action(async () => {
++    process.stderr.write("Anthropic account logout is disabled in Vertex. Use `vertex /logout` through the Python entrypoint to set a DeepSeek API key.\n");
++    process.exit(1);
+   });
+   const coworkOption = () => new Option("--cowork", "Use cowork_plugins directory").hideHelp();
+   const pluginCmd = program2.command("plugin").alias("plugins").description("Manage Claude Code plugins").configureHelp(createSortedHelpConfig());
+@@ -571487,14 +571510,9 @@ Usage: vertex --remote "your task description"`, () => gracefulShutdown(1));
+     } = await Promise.resolve().then(() => (init_plugins(), exports_plugins));
+     await pluginUpdateHandler2(plugin2, options2);
+   });
+-  program2.command("setup-token").description("Set up a long-lived authentication token (requires Claude subscription)").action(async () => {
+-    const [{
+-      setupTokenHandler: setupTokenHandler2
+-    }, {
+-      createRoot: createRoot3
+-    }] = await Promise.all([Promise.resolve().then(() => (init_util3(), exports_util2)), Promise.resolve().then(() => (init_ink2(), exports_ink))]);
+-    const root2 = await createRoot3(getBaseRenderOptions(false));
+-    await setupTokenHandler2(root2);
++  program2.command("setup-token").description("Disabled in Vertex; use a DeepSeek API key").action(async () => {
++    process.stderr.write("Anthropic token setup is disabled in Vertex. Use `vertex /logout` or `vertex auth login` to set a DeepSeek API key.\n");
++    process.exit(1);
+   });
+   program2.command("agents").description("List configured agents").option("--setting-sources <sources>", "Comma-separated list of setting sources to load (user, project, local).").action(async () => {
+     const {

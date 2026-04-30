@@ -52,8 +52,9 @@ if ! command -v pipx &>/dev/null; then
 fi
 
 # ─── Step 3: Install standalone Vertex CLI + proxy ───────────────
-echo -e "${BOLD}[3/4] Installing standalone Vertex CLI + proxy...${RESET}"
-pipx install vertex-deepseek --force 2>&1 | tail -1 || pipx install vertex-deepseek 2>&1 | tail -1
+echo -e "${BOLD}[3/4] Installing standalone Vertex CLI + proxy from GitHub main...${RESET}"
+pipx uninstall vertex-deepseek >/dev/null 2>&1 || true
+pipx install "git+https://github.com/alvaro209890/Vertex.git" --force
 
 # ─── Step 4: Configure Vertex CLI settings ───────────────────────
 echo -e "${BOLD}[4/4] Configuring Vertex CLI settings...${RESET}"
@@ -61,12 +62,12 @@ SETTINGS_DIR="$HOME/.vertex"
 SETTINGS_FILE="$SETTINGS_DIR/settings.json"
 mkdir -p "$SETTINGS_DIR"
 
-if [ ! -f "$SETTINGS_FILE" ]; then
-    cat > "$SETTINGS_FILE" << 'JSONEOF'
+cat > "$SETTINGS_FILE" << 'JSONEOF'
 {
   "env": {
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:8083",
     "ANTHROPIC_AUTH_TOKEN": "freecc",
+    "DISABLE_LOGIN_COMMAND": "1",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek/deepseek-v4-pro",
     "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "DeepSeek V4 Pro",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek/deepseek-v4-flash",
@@ -78,8 +79,7 @@ if [ ! -f "$SETTINGS_FILE" ]; then
   "model": "deepseek/deepseek-v4-pro"
 }
 JSONEOF
-    echo "Settings created"
-fi
+echo "Settings written for DeepSeek"
 
 echo ""
 echo -e "${GREEN}======================================================${RESET}"
