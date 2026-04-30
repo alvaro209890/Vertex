@@ -5,6 +5,7 @@ __pycache__
 dist/
 !vendor/vertex-cli/dist/
 !vendor/vertex-cli/dist/**
+vendor/vertex-cli/node_modules/.bin/
 build/
 .pytest_cache
 .ruff_cache

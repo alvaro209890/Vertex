@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 import tomllib
 from pathlib import Path
 
@@ -54,7 +55,7 @@ def test_root_env_example_is_packaged_for_fcc_init() -> None:
     assert force_include[".env.example"] == "cli/env.example"
 
 
-def test_vendored_cli_runtime_package_excludes_node_modules() -> None:
+def test_vendored_cli_runtime_package_keeps_node_modules_without_bin_shims() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     pyproject = tomllib.loads((repo_root / "pyproject.toml").read_text("utf-8"))
 
@@ -62,10 +63,15 @@ def test_vendored_cli_runtime_package_excludes_node_modules() -> None:
         "force-include"
     ]
 
-    assert "vendor/vertex-cli" not in force_include
-    assert force_include["vendor/vertex-cli/bin"] == "vendor/vertex-cli/bin"
-    assert force_include["vendor/vertex-cli/dist"] == "vendor/vertex-cli/dist"
-    assert not any("node_modules" in path for path in force_include)
+    assert force_include["vendor/vertex-cli"] == "vendor/vertex-cli"
+    tracked_bin_shims = subprocess.run(
+        ["git", "ls-files", "vendor/vertex-cli/node_modules/.bin"],
+        cwd=repo_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+    assert tracked_bin_shims == []
 
 
 def test_pyproject_first_party_packages_match_packaged_roots() -> None:
