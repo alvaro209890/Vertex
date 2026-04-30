@@ -3,6 +3,8 @@ __pycache__
 .cursor
 *.egg-info
 dist/
+!vendor/vertex-cli/dist/
+!vendor/vertex-cli/dist/**
 build/
 .pytest_cache
 .ruff_cache

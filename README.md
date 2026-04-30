@@ -2,12 +2,13 @@
 
 # 🔷 Vertex
 
-DeepSeek-native proxy for Claude Code CLI.
+Standalone Vertex CLI with a bundled OpenClaude-derived tool runtime and local
+Anthropic-compatible proxy.
 
 ```bash
 pipx install vertex-deepseek
 vertex-init    # first run: prompts for your DeepSeek API key
-vertex         # start the proxy
+vertex         # open the Vertex CLI app
 ```
 
 </div>
@@ -15,8 +16,9 @@ vertex         # start the proxy
 ## What You Get
 
 - One-command setup: `pipx install vertex-deepseek` then `vertex`
+- Standalone `vertex` app; no external `openclaude` command is required
 - First run prompts for your DeepSeek API key interactively
-- Drop-in proxy for Claude Code's Anthropic API calls
+- Bundled agent/tool runtime derived from OpenClaude
 - DeepSeek-native backend with Anthropic-compatible Messages API
 - Per-model routing: Opus → v4-pro, Sonnet/Haiku → v4-flash
 - Streaming, tool use, reasoning/thinking block handling
@@ -45,7 +47,7 @@ pip install vertex-deepseek
 > Ubuntu 24.04+ blocks `pip install` outside a virtualenv (PEP 668).
 > Use `pipx` instead, or create a venv first.
 
-Requires Python 3.12+ and [Claude Code](https://github.com/anthropics/claude-code).
+Requires Python 3.12+ and Node.js 20+.
 
 ### 2. Configure
 
@@ -58,29 +60,25 @@ Get one at [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_ke
 
 To change the key later: `vertex --logout`
 
-### 3. Start The Proxy
+### 3. Open Vertex
 
 ```bash
 vertex
 ```
 
-That's it. The proxy starts on `0.0.0.0:8082`.
+That's it. `vertex` starts the local proxy if needed and opens the bundled
+Vertex CLI runtime.
 
-### 4. Run Claude Code
+### 4. Proxy-Only Mode
 
-Point `ANTHROPIC_BASE_URL` at the proxy root. Do not append `/v1`.
-
-PowerShell:
-
-```powershell
-$env:ANTHROPIC_AUTH_TOKEN="freecc"; $env:ANTHROPIC_BASE_URL="http://localhost:8082"; claude
-```
-
-Bash:
+If you only want the Anthropic-compatible local server:
 
 ```bash
-ANTHROPIC_AUTH_TOKEN="freecc" ANTHROPIC_BASE_URL="http://localhost:8082" claude
+vertex-proxy
 ```
+
+The default proxy URL is `http://127.0.0.1:8083`. Do not append `/v1` when
+pointing Anthropic-style clients at it.
 
 ## Choose A Provider
 
@@ -222,13 +220,15 @@ MODEL="nvidia_nim/z-ai/glm4.7"
 
 </details>
 
-## Connect Claude Code
+## Connect External Anthropic Clients
 
-### Claude Code CLI
+Vertex opens its own bundled CLI runtime with:
 
 ```bash
-ANTHROPIC_AUTH_TOKEN="freecc" ANTHROPIC_BASE_URL="http://localhost:8082" claude
+vertex
 ```
+
+You can also point any Anthropic Messages-compatible client at the local proxy.
 
 ### VS Code Extension
 
@@ -236,7 +236,7 @@ Open Settings, search for `claude-code.environmentVariables`, choose **Edit in s
 
 ```json
 "claudeCode.environmentVariables": [
-  { "name": "ANTHROPIC_BASE_URL", "value": "http://localhost:8082" },
+  { "name": "ANTHROPIC_BASE_URL", "value": "http://localhost:8083" },
   { "name": "ANTHROPIC_AUTH_TOKEN", "value": "freecc" }
 ]
 ```
@@ -254,7 +254,7 @@ Set the environment for `acp.registry.claude-acp`:
 
 ```json
 "env": {
-  "ANTHROPIC_BASE_URL": "http://localhost:8082",
+  "ANTHROPIC_BASE_URL": "http://localhost:8083",
   "ANTHROPIC_AUTH_TOKEN": "freecc"
 }
 ```
@@ -263,7 +263,7 @@ Restart the IDE after changing the file.
 
 ### Model Picker
 
-`claude-pick` lets you choose a model at launch time.
+`claude-pick` lets legacy Claude-compatible clients choose a model at launch time.
 
 ```bash
 brew install fzf
@@ -274,7 +274,7 @@ claude-pick
 You can also create fixed aliases:
 
 ```bash
-alias claude-kimi='ANTHROPIC_BASE_URL="http://localhost:8082" ANTHROPIC_AUTH_TOKEN="freecc:moonshotai/kimi-k2.5" claude'
+alias claude-kimi='ANTHROPIC_BASE_URL="http://localhost:8083" ANTHROPIC_AUTH_TOKEN="freecc:moonshotai/kimi-k2.5" claude'
 ```
 
 ## Optional Integrations
@@ -414,7 +414,7 @@ These tools perform outbound HTTP from the proxy. Keep private-network access di
 
 Update to the latest commit first. Older versions could emit invalid usage metadata in streaming responses. Then check:
 
-- `ANTHROPIC_BASE_URL` is `http://localhost:8082`, not `http://localhost:8082/v1`.
+- `ANTHROPIC_BASE_URL` is `http://localhost:8083`, not `http://localhost:8083/v1`.
 - The proxy is returning Server-Sent Events for `/v1/messages`.
 - `server.log` contains no upstream 400/500 response before the malformed-response error.
 
@@ -444,11 +444,11 @@ Confirm the extension environment variables are set, then reload the extension o
 ## How It Works
 
 ```text
-Claude Code CLI / IDE
+Vertex CLI / external Anthropic client
         |
         | Anthropic Messages API
         v
-Vertex proxy (:8082)
+Vertex proxy (:8083)
         |
         | provider-specific request/stream adapter
         v

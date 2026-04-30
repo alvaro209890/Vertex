@@ -47,42 +47,28 @@ def _run_wizard_if_needed() -> None:
     run_setup_wizard(ENV_FILE)
 
 
-def _apply_theme(openclaude_bin: str) -> None:
-    """Apply Vertex theme to OpenClaude CLI if not already patched."""
-    import subprocess
-
-    cli_mjs = Path(openclaude_bin).resolve().parent.parent / "dist" / "cli.mjs"
-    if not cli_mjs.exists():
-        # Try common npm paths
-        for p in [
-            "/usr/local/lib/node_modules/@gitlawb/openclaude/dist/cli.mjs",
-            "/usr/lib/node_modules/@gitlawb/openclaude/dist/cli.mjs",
-        ]:
-            if Path(p).exists():
-                cli_mjs = Path(p)
-                break
-        else:
-            return  # Can't find the file, skip theme
-
-    # Check if already patched (look for green ACCENT value)
-    content = cli_mjs.read_text(encoding="utf-8")
-    if "ACCENT = [0, 255, 136]" in content:
-        return  # Already patched
-
-    # Run the theme script
-    script_url = (
-        "https://raw.githubusercontent.com/alvaro209890/Vertex/main/"
-        "scripts/apply-vertex-theme.sh"
+def _vertex_cli_bin() -> Path:
+    """Return the vendored Vertex CLI launcher path."""
+    if override := os.environ.get("VERTEX_CLI_BIN"):
+        return Path(override).expanduser()
+    return (
+        Path(__file__).resolve().parents[1] / "vendor" / "vertex-cli" / "bin" / "vertex"
     )
-    try:
-        subprocess.run(
-            ["bash", "-c", f"curl -fsSL {script_url} | bash"],
-            capture_output=True,
-            timeout=30,
-        )
-        print("  ✓ Vertex theme applied to CLI")
-    except Exception:
-        print("  Warning: Could not auto-apply theme. Run the installer script.")
+
+
+def _node_bin() -> str | None:
+    """Find a Node.js executable for the vendored CLI runtime."""
+    import shutil
+
+    if node := shutil.which("node"):
+        return node
+
+    nvm_root = Path.home() / ".nvm" / "versions" / "node"
+    candidates = sorted(nvm_root.glob("*/bin/node"), reverse=True)
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+    return None
 
 
 def _start_proxy() -> bool:
@@ -91,8 +77,12 @@ def _start_proxy() -> bool:
     import time
     import urllib.request
 
+    # Determine port from settings or env
+    port = os.environ.get("VERTEX_PORT", "8083")
+    health_url = f"http://127.0.0.1:{port}/health"
+
     try:
-        urllib.request.urlopen("http://127.0.0.1:8082/health", timeout=1)
+        urllib.request.urlopen(health_url, timeout=1)
         return True  # Already running
     except Exception:
         pass
@@ -111,18 +101,17 @@ def _start_proxy() -> bool:
     for _ in range(15):
         time.sleep(1)
         try:
-            urllib.request.urlopen("http://127.0.0.1:8082/health", timeout=1)
+            urllib.request.urlopen(health_url, timeout=1)
             return True
         except Exception:
             continue
 
-    print("Warning: Proxy may not have started on port 8082.")
+    print(f"Warning: Proxy may not have started on port {port}.")
     return False
 
 
 def cli() -> None:
-    """Launch Vertex CLI: ensure proxy is running, apply theme, open OpenClaude."""
-    import shutil
+    """Launch Vertex CLI: ensure proxy is running, open the vendored CLI runtime."""
     import subprocess
 
     _run_wizard_if_needed()
@@ -138,37 +127,35 @@ def cli() -> None:
         print("No config found. Run: vertex-init")
         return
 
-    # Find openclaude binary
-    openclaude_bin = shutil.which("openclaude")
-    if not openclaude_bin:
-        print("Error: OpenClaude CLI not found.")
-        print("Install: npm install -g @gitlawb/openclaude")
-        print()
-        print("Or use the one-command installer:")
+    vertex_cli = _vertex_cli_bin()
+    if not vertex_cli.is_file():
+        print(f"Error: Vertex CLI runtime not found at {vertex_cli}")
         print(
-            "  curl -fsSL https://raw.githubusercontent.com/alvaro209890/"
-            "Vertex/main/scripts/install-vertex.sh | bash"
+            "Reinstall Vertex or rebuild the package with vendor/vertex-cli included."
         )
         sys.exit(1)
-
-    # Apply Vertex theme to OpenClaude
-    _apply_theme(openclaude_bin)
+    node_bin = _node_bin()
+    if node_bin is None:
+        print("Error: Node.js is required to run the Vertex CLI runtime.")
+        print("Install Node.js 20+ and run vertex again.")
+        sys.exit(1)
 
     # Start proxy
     _start_proxy()
 
-    # Set env vars for OpenClaude to use the proxy
+    # Set env vars for Vertex to use the proxy.
+    port = os.environ.get("VERTEX_PORT", "8083")
     env = os.environ.copy()
-    env["ANTHROPIC_BASE_URL"] = "http://127.0.0.1:8082"
+    env["ANTHROPIC_BASE_URL"] = f"http://127.0.0.1:{port}"
     env["ANTHROPIC_AUTH_TOKEN"] = "freecc"
 
-    # Launch OpenClaude CLI
+    # Launch Vertex CLI
     print("Launching Vertex CLI...")
     try:
-        proc = subprocess.run([openclaude_bin, *sys.argv[1:]], env=env)
+        proc = subprocess.run([node_bin, str(vertex_cli), *sys.argv[1:]], env=env)
         sys.exit(proc.returncode)
     except FileNotFoundError:
-        print(f"Error: OpenClaude binary not found at {openclaude_bin}")
+        print(f"Error: Vertex CLI runtime not found at {vertex_cli}")
         sys.exit(1)
 
 
