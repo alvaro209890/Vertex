@@ -8,6 +8,8 @@ from pathlib import Path
 
 CONFIG_DIR = Path.home() / ".config" / "vertex"
 ENV_FILE = CONFIG_DIR / ".env"
+VERTEX_CLI_CONFIG_DIR = Path.home() / ".vertex"
+VERTEX_CLI_SETTINGS_FILE = VERTEX_CLI_CONFIG_DIR / "settings.json"
 
 
 def _load_env_template() -> str:
@@ -45,6 +47,33 @@ def _run_wizard_if_needed() -> None:
     from cli.setup_wizard import run_setup_wizard
 
     run_setup_wizard(ENV_FILE)
+
+
+def _ensure_vertex_cli_settings(port: str) -> None:
+    """Create default Vertex CLI settings without overwriting user settings."""
+    if VERTEX_CLI_SETTINGS_FILE.exists():
+        return
+
+    import json
+
+    VERTEX_CLI_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    settings = {
+        "env": {
+            "ANTHROPIC_BASE_URL": f"http://127.0.0.1:{port}",
+            "ANTHROPIC_AUTH_TOKEN": "freecc",
+            "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek/deepseek-v4-pro",
+            "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "DeepSeek V4 Pro",
+            "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek/deepseek-v4-flash",
+            "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "DeepSeek V4 Flash",
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek/deepseek-v4-flash",
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": "DeepSeek V4 Flash",
+        },
+        "skipDangerousModePermissionPrompt": True,
+        "model": "deepseek/deepseek-v4-pro",
+    }
+    VERTEX_CLI_SETTINGS_FILE.write_text(
+        json.dumps(settings, indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def _vertex_cli_bin() -> Path:
@@ -140,11 +169,14 @@ def cli() -> None:
         print("Install Node.js 20+ and run vertex again.")
         sys.exit(1)
 
+    port = os.environ.get("VERTEX_PORT", "8083")
+
     # Start proxy
     _start_proxy()
 
+    _ensure_vertex_cli_settings(port)
+
     # Set env vars for Vertex to use the proxy.
-    port = os.environ.get("VERTEX_PORT", "8083")
     env = os.environ.copy()
     env["ANTHROPIC_BASE_URL"] = f"http://127.0.0.1:{port}"
     env["ANTHROPIC_AUTH_TOKEN"] = "freecc"

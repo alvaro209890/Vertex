@@ -134,3 +134,37 @@ def test_cli_launches_vendored_vertex_runtime(tmp_path: Path) -> None:
     assert run.call_args.args[0] == [str(node_bin), str(vertex_bin), "--version"]
     assert run.call_args.kwargs["env"]["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:8083"
     exit_.assert_called_once_with(7)
+
+
+def test_cli_creates_default_vertex_settings(tmp_path: Path) -> None:
+    """cli() creates ~/.vertex/settings.json defaults when missing."""
+    import json
+    import sys
+
+    from cli import entrypoints
+
+    vertex_bin = tmp_path / "vertex"
+    vertex_bin.write_text("#!/usr/bin/env node\n", encoding="utf-8")
+    node_bin = tmp_path / "node"
+    node_bin.write_text("", encoding="utf-8")
+    settings_file = tmp_path / ".vertex" / "settings.json"
+
+    with (
+        patch.object(entrypoints, "_run_wizard_if_needed"),
+        patch.object(entrypoints, "_start_proxy", return_value=True),
+        patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
+        patch.object(entrypoints, "VERTEX_CLI_CONFIG_DIR", settings_file.parent),
+        patch.object(entrypoints, "VERTEX_CLI_SETTINGS_FILE", settings_file),
+        patch.dict(os.environ, {"VERTEX_CLI_BIN": str(vertex_bin)}, clear=False),
+        patch.object(sys, "argv", ["vertex", "--version"]),
+        patch("subprocess.run") as run,
+        patch("sys.exit", side_effect=SystemExit),
+        suppress(SystemExit),
+    ):
+        run.return_value.returncode = 0
+        entrypoints.cli()
+
+    settings = json.loads(settings_file.read_text(encoding="utf-8"))
+    assert settings["env"]["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:8083"
+    assert settings["env"]["ANTHROPIC_AUTH_TOKEN"] == "freecc"
+    assert settings["skipDangerousModePermissionPrompt"] is True
