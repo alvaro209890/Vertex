@@ -6,7 +6,11 @@ dist/
 !vendor/vertex-cli/dist/
 !vendor/vertex-cli/dist/**
 vendor/vertex-cli/node_modules/.bin/
+!vendor/vertex-cli/node_modules/**/dist/
+!vendor/vertex-cli/node_modules/**/dist/**
 build/
+!vendor/vertex-cli/node_modules/**/build/
+!vendor/vertex-cli/node_modules/**/build/**
 .pytest_cache
 .ruff_cache
 .serena
