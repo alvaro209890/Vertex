@@ -82,6 +82,22 @@ def _validate_deepseek_native_request_dict(data: dict[str, Any]) -> None:
         _walk_block_list_for_unsupported(system, where="system")
 
 
+def sanitize_deepseek_tools_for_native(tools: Any) -> Any:
+    """Remove fields DeepSeek treats as server-tool discriminators on custom tools."""
+    if not isinstance(tools, list):
+        return tools
+
+    sanitized: list[Any] = []
+    for tool in tools:
+        if not isinstance(tool, dict) or _is_server_listed_tool(tool):
+            sanitized.append(tool)
+            continue
+        new_tool = dict(tool)
+        new_tool.pop("type", None)
+        sanitized.append(new_tool)
+    return sanitized
+
+
 def sanitize_deepseek_messages_for_native(
     messages: Any, *, thinking_enabled: bool
 ) -> Any:
@@ -150,6 +166,8 @@ def build_request_body(request_data: Any, *, thinking_enabled: bool) -> dict:
     data = dump_raw_messages_request(request_data)
     _validate_deepseek_native_request_dict(data)
     data.pop("extra_body", None)
+    if "tools" in data:
+        data["tools"] = sanitize_deepseek_tools_for_native(data["tools"])
 
     thinking_cfg = data.pop("thinking", None)
     if thinking_enabled and isinstance(thinking_cfg, dict):

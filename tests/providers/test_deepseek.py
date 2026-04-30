@@ -115,6 +115,39 @@ def test_build_request_body_thinking_enabled(deepseek_provider):
     assert "extra_body" not in body
 
 
+def test_build_request_body_strips_custom_tool_type(deepseek_provider):
+    request = MessagesRequest.model_validate(
+        {
+            "model": "m",
+            "messages": [{"role": "user", "content": "x"}],
+            "tools": [
+                {
+                    "name": "Bash",
+                    "type": "custom",
+                    "description": "Run a command",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {"command": {"type": "string"}},
+                    },
+                }
+            ],
+        }
+    )
+
+    body = deepseek_provider._build_request_body(request)
+
+    assert body["tools"] == [
+        {
+            "name": "Bash",
+            "description": "Run a command",
+            "input_schema": {
+                "type": "object",
+                "properties": {"command": {"type": "string"}},
+            },
+        }
+    ]
+
+
 def test_build_request_body_respects_global_thinking_disable():
     provider = DeepSeekProvider(
         ProviderConfig(
