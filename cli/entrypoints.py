@@ -170,16 +170,36 @@ def cli() -> None:
         sys.exit(1)
 
     port = os.environ.get("VERTEX_PORT", "8083")
+    _ensure_vertex_cli_settings(port)
 
     # Start proxy
     _start_proxy()
 
-    _ensure_vertex_cli_settings(port)
-
     # Set env vars for Vertex to use the proxy.
     env = os.environ.copy()
+    for key in (
+        "CLAUDE_CODE_USE_OPENAI",
+        "CLAUDE_CODE_USE_GEMINI",
+        "CLAUDE_CODE_USE_MISTRAL",
+        "CLAUDE_CODE_USE_GITHUB",
+        "CLAUDE_CODE_USE_BEDROCK",
+        "CLAUDE_CODE_USE_VERTEX",
+        "OPENAI_API_BASE",
+        "OPENAI_API_KEY",
+        "OPENAI_BASE_URL",
+        "OPENAI_MODEL",
+        "OPENCLAUDE_EXTRA_MODEL_OPTIONS",
+    ):
+        env.pop(key, None)
+    env["CLAUDE_CONFIG_DIR"] = str(VERTEX_CLI_CONFIG_DIR)
     env["ANTHROPIC_BASE_URL"] = f"http://127.0.0.1:{port}"
     env["ANTHROPIC_AUTH_TOKEN"] = "freecc"
+    env["ANTHROPIC_DEFAULT_OPUS_MODEL"] = "deepseek/deepseek-v4-pro"
+    env["ANTHROPIC_DEFAULT_OPUS_MODEL_NAME"] = "DeepSeek V4 Pro"
+    env["ANTHROPIC_DEFAULT_SONNET_MODEL"] = "deepseek/deepseek-v4-flash"
+    env["ANTHROPIC_DEFAULT_SONNET_MODEL_NAME"] = "DeepSeek V4 Flash"
+    env["ANTHROPIC_DEFAULT_HAIKU_MODEL"] = "deepseek/deepseek-v4-flash"
+    env["ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME"] = "DeepSeek V4 Flash"
 
     # Launch Vertex CLI
     print("Launching Vertex CLI...")

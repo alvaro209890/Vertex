@@ -1,65 +1,16 @@
 #!/usr/bin/env bash
-# vertex — Launch Vertex CLI (proxy in background, then open Claude Code CLI)
-# Installed via: pipx install vertex-deepseek
-# Usage: vertex [--logout|/logout]
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# If called as the CLI directly (via npm symlink), exec openclaude
-if command -v openclaude >/dev/null 2>&1 && [ "$(command -v openclaude)" != "$0" ] && [ "$(command -v openclaude)" != "$(realpath "$0")" ]; then
-    # Check if we should start proxy
-    if [ "$1" != "--logout" ] && [ "$1" != "/logout" ]; then
-        # Start proxy in background if not already running
-        if ! curl -sf http://127.0.0.1:8082/health >/dev/null 2>&1; then
-            echo "Starting Vertex proxy..."
-            vertex-proxy &
-            sleep 2
-        fi
-    fi
-    exec vertex "$@"
+if [ -x "$SCRIPT_DIR/.venv/bin/python" ]; then
+    exec "$SCRIPT_DIR/.venv/bin/python" -c 'from cli.entrypoints import cli; cli()' "$@"
 fi
 
-# Handle --logout
-if [ "$1" = "--logout" ] || [ "$1" = "/logout" ]; then
-    if command -v vertex-init >/dev/null 2>&1; then
-        exec vertex-init --logout
-    fi
-    echo "Error: vertex-init not found. Run: pipx install vertex-deepseek"
-    exit 1
+if command -v python3 >/dev/null 2>&1; then
+    export PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}"
+    exec python3 -c 'from cli.entrypoints import cli; cli()' "$@"
 fi
 
-# Start proxy in background
-start_proxy() {
-    if command -v vertex-proxy >/dev/null 2>&1; then
-        vertex-proxy &
-        PROXY_PID=$!
-        sleep 2
-        # Wait a bit for proxy to be ready
-        for i in $(seq 1 10); do
-            if curl -sf http://127.0.0.1:8082/health >/dev/null 2>&1; then
-                break
-            fi
-            sleep 1
-        done
-    fi
-}
-
-# Check if proxy is running
-if curl -sf http://127.0.0.1:8082/health >/dev/null 2>&1; then
-    PROXY_RUNNING=1
-else
-    PROXY_RUNNING=0
-    echo "Starting Vertex proxy..."
-    start_proxy
-fi
-
-# Run the CLI
-if command -v openclaude >/dev/null 2>&1; then
-    export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-http://127.0.0.1:8082}"
-    export ANTHROPIC_AUTH_TOKEN="${ANTHROPIC_AUTH_TOKEN:-freecc}"
-    exec openclaude "$@"
-fi
-
-echo "Error: OpenClaude CLI not found."
-echo "Run the installer: curl -fsSL https://raw.githubusercontent.com/alvaro209890/Vertex/main/scripts/install-vertex.sh | bash"
+echo "Error: Python 3 is required to run Vertex." >&2
 exit 1
