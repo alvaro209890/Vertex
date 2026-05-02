@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# install-vertex.sh — One-command install: Vertex CLI + DeepSeek proxy
-# Usage: curl -fsSL https://raw.githubusercontent.com/alvaro209890/Vertex/main/scripts/install-vertex.sh | bash
+# install-vertex.sh — Instalacao em um comando: CLI Vertex + proxy DeepSeek
+# Uso: curl -fsSL https://raw.githubusercontent.com/alvaro209890/Vertex/main/scripts/install-vertex.sh | bash
 set -euo pipefail
 
 GREEN='\033[0;32m'
@@ -9,29 +9,29 @@ RESET='\033[0m'
 
 echo ""
 echo -e "${GREEN}======================================================${RESET}"
-echo -e "${GREEN}  Vertex — All-in-One CLI + DeepSeek Proxy Installer${RESET}"
+echo -e "${GREEN}  Vertex — Instalador da CLI + proxy DeepSeek${RESET}"
 echo -e "${GREEN}======================================================${RESET}"
 echo ""
 
-# ─── Detect OS ──────────────────────────────────────────────────
+# ─── Detectar sistema operacional ───────────────────────────────
 OS="$(uname -s)"
 
-# ─── Step 1: Install Node.js via nvm ─────────────────────────────
+# ─── Etapa 1: Instalar Node.js via nvm ───────────────────────────
 if ! command -v node &>/dev/null; then
-    echo -e "${BOLD}[1/4] Installing Node.js via nvm...${RESET}"
+    echo -e "${BOLD}[1/4] Instalando Node.js via nvm...${RESET}"
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
     export NVM_DIR="$HOME/.nvm"
     # shellcheck source=/dev/null
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
     nvm install 20
     nvm alias default 20
-    echo "Node.js $(node --version) installed"
+    echo "Node.js $(node --version) instalado"
 else
-    echo -e "${BOLD}[1/4] Node.js already installed: $(node --version)${RESET}"
+    echo -e "${BOLD}[1/4] Node.js ja instalado: $(node --version)${RESET}"
 fi
 
-# ─── Step 2: Install pipx ────────────────────────────────────────
-echo -e "${BOLD}[2/4] Installing pipx...${RESET}"
+# ─── Etapa 2: Instalar pipx ──────────────────────────────────────
+echo -e "${BOLD}[2/4] Instalando pipx...${RESET}"
 if ! command -v pipx &>/dev/null; then
     if [ "$OS" = "Linux" ]; then
         if command -v apt &>/dev/null; then
@@ -51,13 +51,13 @@ if ! command -v pipx &>/dev/null; then
     source "$HOME/.bashrc" 2>/dev/null || true
 fi
 
-# ─── Step 3: Install standalone Vertex CLI + proxy ───────────────
-echo -e "${BOLD}[3/4] Installing standalone Vertex CLI + proxy from GitHub main...${RESET}"
+# ─── Etapa 3: Instalar CLI Vertex + proxy ────────────────────────
+echo -e "${BOLD}[3/4] Instalando CLI Vertex + proxy do GitHub main...${RESET}"
 pipx uninstall vertex-deepseek >/dev/null 2>&1 || true
 pipx install "git+https://github.com/alvaro209890/Vertex.git" --force
 
-# ─── Step 4: Configure Vertex CLI settings ───────────────────────
-echo -e "${BOLD}[4/4] Configuring Vertex CLI settings...${RESET}"
+# ─── Etapa 4: Configurar ajustes da CLI Vertex ───────────────────
+echo -e "${BOLD}[4/4] Configurando ajustes da CLI Vertex...${RESET}"
 SETTINGS_DIR="$HOME/.vertex"
 SETTINGS_FILE="$SETTINGS_DIR/settings.json"
 mkdir -p "$SETTINGS_DIR"
@@ -79,7 +79,7 @@ cat > "$SETTINGS_FILE" << 'JSONEOF'
   "model": "deepseek/deepseek-v4-flash"
 }
 JSONEOF
-echo "Settings written for DeepSeek"
+echo "Configuracao gravada para DeepSeek"
 
 echo ""
 echo -e "${GREEN}======================================================${RESET}"
@@ -88,7 +88,7 @@ echo -e "${GREEN}======================================================${RESET}"
 echo ""
 echo -e "  ${BOLD}Comandos:${RESET}"
 echo -e "    ${GREEN}vertex${RESET}          — Abre a CLI do Vertex (já conectado ao proxy)"
-echo -e "    ${GREEN}vertex --logout${RESET} — Trocar a chave DeepSeek"
+echo -e "    ${GREEN}vertex /logout${RESET} — Trocar a chave DeepSeek"
 echo ""
 echo -e "  ${BOLD}Primeiro uso:${RESET}"
 echo -e "    Feche e abra o terminal, ou rode: source ~/.bashrc"

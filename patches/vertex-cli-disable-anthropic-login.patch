@@ -144,3 +144,1288 @@ index 7cb44245..c3bc5e75 100644
    });
    program2.command("agents").description("List configured agents").option("--setting-sources <sources>", "Comma-separated list of setting sources to load (user, project, local).").action(async () => {
      const {
+
+diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
+index 3ef06d03..922e5135 100644
+--- a/vendor/vertex-cli/dist/cli.mjs
++++ b/vendor/vertex-cli/dist/cli.mjs
+@@ -403292,14 +403292,14 @@ async function call6(onDone, context5, args) {
+     if (remember) {
+       try {
+         persistPermissionUpdate(permissionUpdate);
+-        message = `Added ${source_default.bold(path17)} as a working directory and saved to local settings`;
++        message = `${source_default.bold(path17)} adicionado como diretorio de trabalho e salvo nas configuracoes locais`;
+       } catch (error42) {
+-        message = `Added ${source_default.bold(path17)} as a working directory. Failed to save to local settings: ${error42 instanceof Error ? error42.message : "Unknown error"}`;
++        message = `${source_default.bold(path17)} adicionado como diretorio de trabalho. Falha ao salvar nas configuracoes locais: ${error42 instanceof Error ? error42.message : "erro desconhecido"}`;
+       }
+     } else {
+-      message = `Added ${source_default.bold(path17)} as a working directory for this session`;
++      message = `${source_default.bold(path17)} adicionado como diretorio de trabalho desta sessao`;
+     }
+-    const messageWithHint = `${message} ${source_default.dim("· /permissions to manage")}`;
++    const messageWithHint = `${message} ${source_default.dim("· /permissions para gerenciar")}`;
+     onDone(messageWithHint);
+   };
+   if (!directoryPath) {
+@@ -403307,7 +403307,7 @@ async function call6(onDone, context5, args) {
+       permissionContext: appState.toolPermissionContext,
+       onAddDirectory: handleAddDirectory,
+       onCancel: () => {
+-        onDone("Did not add a working directory.");
++        onDone("Nenhum diretorio de trabalho foi adicionado.");
+       }
+     }, undefined, false, undefined, this);
+   }
+@@ -403325,7 +403325,7 @@ async function call6(onDone, context5, args) {
+     permissionContext: appState.toolPermissionContext,
+     onAddDirectory: handleAddDirectory,
+     onCancel: () => {
+-      onDone(`Did not add ${source_default.bold(result.absolutePath)} as a working directory.`);
++      onDone(`${source_default.bold(result.absolutePath)} nao foi adicionado como diretorio de trabalho.`);
+     }
+   }, undefined, false, undefined, this);
+ }
+@@ -403351,8 +403351,8 @@ var init_add_dir2 = __esm(() => {
+   addDir = {
+     type: "local-jsx",
+     name: "add-dir",
+-    description: "Add a new working directory",
+-    argumentHint: "<path>",
++    description: "Adicionar um novo diretorio de trabalho",
++    argumentHint: "<caminho>",
+     load: () => Promise.resolve().then(() => (init_add_dir(), exports_add_dir))
+   };
+   add_dir_default = addDir;
+@@ -403666,13 +403666,13 @@ function BtwSideQuestion(t0) {
+             if (result.response) {
+               setResponse(result.response);
+             } else {
+-              setError("No response received");
++            setError("Nenhuma resposta recebida");
+             }
+           }
+         } catch (t52) {
+           const err2 = t52;
+           if (!abortController.signal.aborted) {
+-            setError(errorMessage(err2) || "Failed to get response");
++            setError(errorMessage(err2) || "Falha ao obter resposta");
+           }
+         }
+       };
+@@ -403741,7 +403741,7 @@ function BtwSideQuestion(t0) {
+           }, undefined, false, undefined, this),
+           /* @__PURE__ */ jsx_dev_runtime165.jsxDEV(ThemedText, {
+             color: "warning",
+-            children: "Answering..."
++            children: "Respondendo..."
+           }, undefined, false, undefined, this)
+         ]
+       }, undefined, true, undefined, this)
+@@ -403777,7 +403777,7 @@ function BtwSideQuestion(t0) {
+           UP_ARROW,
+           "/",
+           DOWN_ARROW,
+-          " to scroll · Space, Enter, or Escape to dismiss"
++          " para rolar · Espaco, Enter ou Escape para fechar"
+         ]
+       }, undefined, true, undefined, this)
+     }, undefined, false, undefined, this);
+@@ -403846,7 +403846,7 @@ async function buildCacheSafeParams(context5) {
+ async function call7(onDone, context5, args) {
+   const question = args?.trim();
+   if (!question) {
+-    onDone("Usage: /btw <your question>", {
++    onDone("Uso: /btw <sua pergunta>", {
+       display: "system"
+     });
+     return null;
+@@ -403890,9 +403890,9 @@ var init_btw2 = __esm(() => {
+   btw = {
+     type: "local-jsx",
+     name: "btw",
+-    description: "Ask a quick side question without interrupting the main conversation",
++    description: "Fazer uma pergunta rapida sem interromper a conversa principal",
+     immediate: true,
+-    argumentHint: "<question>",
++    argumentHint: "<pergunta>",
+     load: () => Promise.resolve().then(() => (init_btw(), exports_btw))
+   };
+   btw_default = btw;
+@@ -405700,7 +405700,7 @@ var init_clear2 = __esm(() => {
+   clear = {
+     type: "local",
+     name: "clear",
+-    description: "Clear conversation history and free up context",
++    description: "Limpar o historico da conversa e liberar contexto",
+     aliases: ["reset", "new"],
+     supportsNonInteractive: false,
+     load: () => Promise.resolve().then(() => (init_clear(), exports_clear))
+@@ -405775,9 +405775,9 @@ var init_color3 = __esm(() => {
+   color2 = {
+     type: "local-jsx",
+     name: "color",
+-    description: "Set the prompt bar color for this session",
++    description: "Definir a cor da barra de prompt desta sessao",
+     immediate: true,
+-    argumentHint: "<color|default>",
++    argumentHint: "<cor|default>",
+     load: () => Promise.resolve().then(() => (init_color2(), exports_color))
+   };
+   color_default = color2;
+@@ -405841,10 +405841,10 @@ var init_commit = __esm(() => {
+   command = {
+     type: "prompt",
+     name: "commit",
+-    description: "Create a git commit",
++    description: "Criar um commit git",
+     allowedTools: ALLOWED_TOOLS,
+     contentLength: 0,
+-    progressMessage: "creating commit",
++    progressMessage: "criando commit",
+     source: "builtin",
+     async getPromptForCommand(_args, context5) {
+       const promptContent = getPromptContent();
+@@ -405991,7 +405991,7 @@ function CopyPicker(t0) {
+       t42 = {
+         label: "Always copy full response",
+         value: "always",
+-        description: "Skip this picker in the future (revert via /config)"
++        description: "Ignorar este seletor no futuro (reverter via /config)"
+       };
+       $2[5] = t42;
+     } else {
+@@ -406281,7 +406281,7 @@ var init_copy2 = __esm(() => {
+   copy = {
+     type: "local-jsx",
+     name: "copy",
+-    description: "Copy Claude's last response to clipboard (or /copy N for the Nth-latest)",
++    description: "Copiar a ultima resposta do Vertex para a area de transferencia (ou /copy N para a N-esima mais recente)",
+     load: () => Promise.resolve().then(() => (init_copy(), exports_copy))
+   };
+   copy_default = copy;
+@@ -406772,7 +406772,7 @@ var init_desktop2 = __esm(() => {
+     type: "local-jsx",
+     name: "desktop",
+     aliases: ["app"],
+-    description: "Continue the current session in Claude Desktop",
++    description: "Continuar a sessao atual no app desktop compativel",
+     availability: ["claude-ai"],
+     isEnabled: isSupportedPlatform2,
+     get isHidden() {
+@@ -406886,12 +406886,12 @@ var init_commit_push_pr = __esm(() => {
+   command2 = {
+     type: "prompt",
+     name: "commit-push-pr",
+-    description: "Commit, push, and open a PR",
++    description: "Criar commit, enviar push e abrir um PR",
+     allowedTools: ALLOWED_TOOLS2,
+     get contentLength() {
+       return getPromptContent2("main").length;
+     },
+-    progressMessage: "creating commit and PR",
++    progressMessage: "criando commit e PR",
+     source: "builtin",
+     async getPromptForCommand(args, context5) {
+       const [defaultBranch, prAttribution] = await Promise.all([
+@@ -406987,11 +406987,11 @@ function buildDisplayText(context5, userDisplayMessage) {
+   const upgradeMessage = getUpgradeMessage("tip");
+   const expandShortcut = getShortcutDisplay("app:toggleTranscript", "Global", "ctrl+o");
+   const dimmed = [
+-    ...context5.options.verbose ? [] : [`(${expandShortcut} to see full summary)`],
++    ...context5.options.verbose ? [] : [`(${expandShortcut} para ver o resumo completo)`],
+     ...userDisplayMessage ? [userDisplayMessage] : [],
+     ...upgradeMessage ? [upgradeMessage] : []
+   ];
+-  return source_default.dim("Compacted " + dimmed.join(`
++  return source_default.dim("Compactado " + dimmed.join(`
+ `));
+ }
+ async function getCacheSharingParams(context5, forkContextMessages) {
+@@ -407021,7 +407021,7 @@ var reactiveCompact2 = null, call13 = async (args, context5) => {
+   let { messages } = context5;
+   messages = getMessagesAfterCompactBoundary(messages);
+   if (messages.length === 0) {
+-    throw new Error("No messages to compact");
++    throw new Error("Nao ha mensagens para compactar");
+   }
+   const customInstructions = args.trim();
+   try {
+@@ -407057,14 +407057,14 @@ var reactiveCompact2 = null, call13 = async (args, context5) => {
+     };
+   } catch (error42) {
+     if (abortController.signal.aborted) {
+-      throw new Error("Compaction canceled.");
++      throw new Error("Compactacao cancelada.");
+     } else if (hasExactErrorMessage(error42, ERROR_MESSAGE_NOT_ENOUGH_MESSAGES)) {
+       throw new Error(ERROR_MESSAGE_NOT_ENOUGH_MESSAGES);
+     } else if (hasExactErrorMessage(error42, ERROR_MESSAGE_INCOMPLETE_RESPONSE)) {
+       throw new Error(ERROR_MESSAGE_INCOMPLETE_RESPONSE);
+     } else {
+       logError2(error42);
+-      throw new Error(`Error during compaction: ${error42}`);
++      throw new Error(`Erro durante a compactacao: ${error42}`);
+     }
+   }
+ };
+@@ -407096,10 +407096,10 @@ var init_compact3 = __esm(() => {
+   compact = {
+     type: "local",
+     name: "compact",
+-    description: "Clear conversation history but keep a summary in context. Optional: /compact [instructions for summarization]",
++    description: "Limpar o historico da conversa, mantendo um resumo no contexto. Opcional: /compact [instrucoes para o resumo]",
+     isEnabled: () => !isEnvTruthy(process.env.DISABLE_COMPACT),
+     supportsNonInteractive: true,
+-    argumentHint: "<optional custom summarization instructions>",
++    argumentHint: "<instrucoes opcionais para o resumo>",
+     load: () => Promise.resolve().then(() => (init_compact2(), exports_compact))
+   };
+   compact_default = compact;
+@@ -408579,21 +408579,21 @@ function getOpusPlanOption() {
+   return {
+     value: "opusplan",
+     label: "Opus Plan Mode",
+-    description: "Use Opus 4.6 in plan mode, Sonnet 4.6 otherwise"
++    description: "Usar Opus 4.6 no modo plano e Sonnet 4.6 nos demais casos"
+   };
+ }
+ function getCodexPlanOption() {
+   return {
+     value: "gpt-5.4",
+     label: "gpt-5.4",
+-    description: "GPT-5.4 on the Codex backend with high reasoning"
++    description: "GPT-5.4 no backend Codex com raciocinio alto"
+   };
+ }
+ function getCodexSparkOption() {
+   return {
+     value: "gpt-5.3-codex-spark",
+     label: "gpt-5.3-codex-spark",
+-    description: "GPT-5.3 Codex Spark on the Codex backend for fast tool loops"
++    description: "GPT-5.3 Codex Spark no backend Codex para loops rapidos de ferramentas"
+   };
+ }
+ function getVertexExtraModelOptions() {
+@@ -408611,7 +408611,7 @@ function getVertexExtraModelOptions() {
+         return {
+           value: model,
+           label: model,
+-          description: "Custom gateway model"
++          description: "Modelo de gateway personalizado"
+         };
+       }
+       if (!model || typeof model !== "object" || typeof model.value !== "string") {
+@@ -408654,42 +408654,42 @@ function getCodexModelOptions() {
+     {
+       value: "gpt-5.4",
+       label: "gpt-5.4",
+-      description: "GPT-5.4 with high reasoning"
++      description: "GPT-5.4 com raciocinio alto"
+     },
+     {
+       value: "gpt-5.3-codex",
+       label: "gpt-5.3-codex",
+-      description: "GPT-5.3 Codex with high reasoning"
++      description: "GPT-5.3 Codex com raciocinio alto"
+     },
+     {
+       value: "gpt-5.3-codex-spark",
+       label: "gpt-5.3-codex-spark",
+-      description: "GPT-5.3 Codex Spark for fast tool loops"
++      description: "GPT-5.3 Codex Spark para loops rapidos de ferramentas"
+     },
+     {
+       value: "codexspark",
+       label: "codexspark",
+-      description: "GPT-5.3 Codex Spark alias for fast tool loops"
++      description: "Alias GPT-5.3 Codex Spark para loops rapidos de ferramentas"
+     },
+     {
+       value: "gpt-5.2-codex",
+       label: "gpt-5.2-codex",
+-      description: "GPT-5.2 Codex with high reasoning"
++      description: "GPT-5.2 Codex com raciocinio alto"
+     },
+     {
+       value: "gpt-5.1-codex-max",
+       label: "gpt-5.1-codex-max",
+-      description: "GPT-5.1 Codex Max for deep reasoning"
++      description: "GPT-5.1 Codex Max para raciocinio profundo"
+     },
+     {
+       value: "gpt-5.1-codex-mini",
+       label: "gpt-5.1-codex-mini",
+-      description: "GPT-5.1 Codex Mini - faster, cheaper"
++      description: "GPT-5.1 Codex Mini - mais rapido e barato"
+     },
+     {
+       value: "gpt-5.4-mini",
+       label: "gpt-5.4-mini",
+-      description: "GPT-5.4 Mini - faster, cheaper"
++      description: "GPT-5.4 Mini - mais rapido e barato"
+     }
+   ];
+ }
+@@ -408717,7 +408717,7 @@ function getModelOptionsBase(fastMode = false) {
+         {
+           value: currentModel,
+           label: currentModel,
+-          description: "Currently configured Ollama model"
++          description: "Modelo Ollama configurado atualmente"
+         }
+       ];
+     }
+@@ -408929,7 +408929,7 @@ function getModelOptions(fastMode = false) {
+       options2.push({
+         value: customModel,
+         label: customModel,
+-        description: "Custom model"
++        description: "Modelo personalizado"
+       });
+     }
+     return filterModelOptionsByAllowlist(options2);
+@@ -408969,12 +408969,12 @@ var init_modelOptions = __esm(() => {
+   MaxSonnet46Option = {
+     value: "sonnet",
+     label: "Sonnet",
+-    description: "Sonnet 4.6 · Best for everyday tasks"
++    description: "Sonnet 4.6 · Melhor para tarefas do dia a dia"
+   };
+   MaxHaiku45Option = {
+     value: "haiku",
+     label: "Haiku",
+-    description: "Haiku 4.5 · Fastest for quick answers"
++    description: "Haiku 4.5 · Mais rapido para respostas simples"
+   };
+ });
+
+@@ -409059,7 +409059,7 @@ function ModelPicker(t0) {
+         t62 = {
+           value: initial,
+           label: t52,
+-          description: "Current model"
++          description: "Modelo atual"
+         };
+         $2[6] = initial;
+         $2[7] = t52;
+@@ -413693,7 +413693,7 @@ var init_config7 = __esm(() => {
+     aliases: ["settings"],
+     type: "local-jsx",
+     name: "config",
+-    description: "Open config panel",
++    description: "Abrir painel de configuracao",
+     load: () => Promise.resolve().then(() => (init_config6(), exports_config2))
+   };
+   config_default = config2;
+@@ -415144,7 +415144,7 @@ var init_context4 = __esm(() => {
+   init_state();
+   context5 = {
+     name: "context",
+-    description: "Visualize current context usage as a colored grid",
++    description: "Visualizar o uso atual de contexto como uma grade colorida",
+     isEnabled: () => !getIsNonInteractiveSession(),
+     type: "local-jsx",
+     load: () => Promise.resolve().then(() => (init_context3(), exports_context))
+@@ -415153,7 +415153,7 @@ var init_context4 = __esm(() => {
+     type: "local",
+     name: "context",
+     supportsNonInteractive: true,
+-    description: "Show current context usage",
++    description: "Mostrar o uso atual de contexto",
+     get isHidden() {
+       return !getIsNonInteractiveSession();
+     },
+@@ -415200,7 +415200,7 @@ var init_cost2 = __esm(() => {
+   cost = {
+     type: "local",
+     name: "cost",
+-    description: "Show the total cost and duration of the current session",
++    description: "Mostrar o custo total e a duracao da sessao atual",
+     get isHidden() {
+       if (process.env.USER_TYPE === "ant") {
+         return false;
+@@ -416691,7 +416691,7 @@ var init_diff4 = __esm(() => {
+   diff_default = {
+     type: "local-jsx",
+     name: "diff",
+-    description: "View uncommitted changes and per-turn diffs",
++    description: "Ver alteracoes nao commitadas e diffs por turno",
+     load: () => Promise.resolve().then(() => (init_diff3(), exports_diff))
+   };
+ });
+@@ -418908,7 +418908,7 @@ var init_doctor2 = __esm(() => {
+   init_envUtils();
+   doctor = {
+     name: "doctor",
+-    description: "Diagnose and verify your Claude Code installation and settings",
++    description: "Diagnosticar e verificar a instalacao e as configuracoes do Vertex",
+     isEnabled: () => !isEnvTruthy(process.env.DISABLE_DOCTOR_COMMAND),
+     type: "local-jsx",
+     load: () => Promise.resolve().then(() => (init_doctor(), exports_doctor))
+@@ -419232,7 +419232,7 @@ var init_onboard_github2 = __esm(() => {
+   onboardGithub = {
+     name: "onboard-github",
+     aliases: ["onboarding-github", "onboardgithub", "onboardinggithub"],
+-    description: "Interactive setup for GitHub Copilot: OAuth device login stored in secure storage",
++    description: "Configuracao interativa do GitHub Copilot: login OAuth por dispositivo salvo com seguranca",
+     type: "local-jsx",
+     load: () => Promise.resolve().then(() => (init_onboard_github(), exports_onboard_github))
+   };
+@@ -420094,7 +420094,7 @@ var init_memory2 = __esm(() => {
+   memory = {
+     type: "local-jsx",
+     name: "memory",
+-    description: "Edit Claude memory files",
++    description: "Editar arquivos de memoria do Vertex",
+     load: () => Promise.resolve().then(() => (init_memory(), exports_memory))
+   };
+   memory_default = memory;
+@@ -421057,7 +421057,7 @@ var init_help2 = __esm(() => {
+   help = {
+     type: "local-jsx",
+     name: "help",
+-    description: "Show help and available commands",
++    description: "Mostrar ajuda e comandos disponiveis",
+     load: () => Promise.resolve().then(() => (init_help(), exports_help))
+   };
+   help_default = help;
+@@ -421957,8 +421957,8 @@ var init_ide3 = __esm(() => {
+   ide = {
+     type: "local-jsx",
+     name: "ide",
+-    description: "Manage IDE integrations and show status",
+-    argumentHint: "[open]",
++    description: "Gerenciar integracoes com IDE e mostrar status",
++    argumentHint: "[abrir]",
+     load: () => Promise.resolve().then(() => (init_ide2(), exports_ide))
+   };
+   ide_default = ide;
+@@ -422200,10 +422200,10 @@ var init_init = __esm(() => {
+     type: "prompt",
+     name: "init",
+     get description() {
+-      return isNewInitEnabled() ? "Initialize new project instruction file(s) and optional skills/hooks with codebase documentation" : "Initialize a new project instruction file with codebase documentation";
++      return isNewInitEnabled() ? "Inicializar arquivo(s) de instrucoes do projeto e skills/hooks opcionais com documentacao do codigo" : "Inicializar um novo arquivo de instrucoes do projeto com documentacao do codigo";
+     },
+     contentLength: 0,
+-    progressMessage: "analyzing your codebase",
++    progressMessage: "analisando seu codigo",
+     source: "builtin",
+     async getPromptForCommand() {
+       maybeMarkProjectOnboardingComplete();
+@@ -422224,9 +422224,9 @@ var init_init_verifiers = __esm(() => {
+   command4 = {
+     type: "prompt",
+     name: "init-verifiers",
+-    description: "Create verifier skill(s) for automated verification of code changes",
++    description: "Criar skill(s) verificadoras para validar alteracoes de codigo automaticamente",
+     contentLength: 0,
+-    progressMessage: "analyzing your project and creating verifier skills",
++    progressMessage: "analisando seu projeto e criando skills verificadoras",
+     source: "builtin",
+     async getPromptForCommand() {
+       return [
+@@ -422564,7 +422564,7 @@ var init_keybindings2 = __esm(() => {
+   init_loadUserBindings();
+   keybindings = {
+     name: "keybindings",
+-    description: "Open or create your keybindings configuration file",
++    description: "Abrir ou criar o arquivo de configuracao de atalhos",
+     isEnabled: () => isKeybindingCustomizationEnabled(),
+     supportsNonInteractive: false,
+     type: "local",
+@@ -422577,7 +422577,7 @@ var init_keybindings2 = __esm(() => {
+ var login_default = () => ({
+   type: "local-jsx",
+   name: "login",
+-  description: "Disabled: use /logout to reset the DeepSeek API key",
++  description: "Desativado: use /logout para redefinir a chave DeepSeek",
+   isEnabled: () => !isEnvTruthy(process.env.DISABLE_LOGIN_COMMAND),
+   load: () => Promise.resolve().then(() => (init_login(), exports_login))
+ });
+@@ -422593,7 +422593,7 @@ var init_logout2 = __esm(() => {
+   logout_default = {
+     type: "local-jsx",
+     name: "logout",
+-    description: "Clear the DeepSeek API key",
++    description: "Limpar a chave DeepSeek",
+     isEnabled: () => !isEnvTruthy(process.env.DISABLE_LOGOUT_COMMAND),
+     load: () => Promise.resolve().then(() => (init_logout(), exports_logout))
+   };
+@@ -425922,7 +425922,7 @@ var init_install_github_app2 = __esm(() => {
+   installGitHubApp = {
+     type: "local-jsx",
+     name: "install-github-app",
+-    description: "Set up Claude GitHub Actions for a repository",
++    description: "Configurar GitHub Actions do Vertex para um repositorio",
+     availability: ["claude-ai", "console"],
+     isEnabled: () => !isEnvTruthy(process.env.DISABLE_INSTALL_GITHUB_APP_COMMAND),
+     load: () => Promise.resolve().then(() => (init_install_github_app(), exports_install_github_app))
+@@ -425966,7 +425966,7 @@ var init_install_slack_app2 = __esm(() => {
+   installSlackApp = {
+     type: "local",
+     name: "install-slack-app",
+-    description: "Install the Claude Slack app",
++    description: "Instalar o app Slack compativel",
+     availability: ["claude-ai"],
+     supportsNonInteractive: false,
+     load: () => Promise.resolve().then(() => (init_install_slack_app(), exports_install_slack_app))
+@@ -426322,8 +426322,8 @@ var init_cache_probe2 = __esm(() => {
+   cacheProbe = {
+     type: "local",
+     name: "cache-probe",
+-    description: "Send identical requests to test prompt caching (results in debug log)",
+-    argumentHint: "[model] [--no-key]",
++    description: "Enviar requisicoes identicas para testar cache de prompt (resultados no log de debug)",
++    argumentHint: "[modelo] [--no-key]",
+     isEnabled: () => isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI) || isEnvTruthy(process.env.CLAUDE_CODE_USE_GITHUB),
+     supportsNonInteractive: false,
+     load: () => Promise.resolve().then(() => (init_cache_probe(), exports_cache_probe))
+@@ -440901,9 +440901,9 @@ var init_mcp3 = __esm(() => {
+   mcp = {
+     type: "local-jsx",
+     name: "mcp",
+-    description: "Manage MCP servers",
++    description: "Gerenciar servidores MCP",
+     immediate: true,
+-    argumentHint: "[enable|disable [server-name]]",
++    argumentHint: "[enable|disable [nome-do-servidor]]",
+     load: () => Promise.resolve().then(() => (init_mcp2(), exports_mcp))
+   };
+   mcp_default = mcp;
+@@ -445490,7 +445490,7 @@ var init_mobile2 = __esm(() => {
+     type: "local-jsx",
+     name: "mobile",
+     aliases: ["ios", "android"],
+-    description: "Show QR code to download the Claude mobile app",
++    description: "Mostrar QR code para baixar o app movel compativel",
+     load: () => Promise.resolve().then(() => (init_mobile(), exports_mobile))
+   };
+   mobile_default = mobile;
+@@ -445549,8 +445549,8 @@ var pr_comments_default;
+ var init_pr_comments = __esm(() => {
+   pr_comments_default = createMovedToPluginCommand({
+     name: "pr-comments",
+-    description: "Get comments from a GitHub pull request",
+-    progressMessage: "fetching PR comments",
++    description: "Buscar comentarios de um pull request do GitHub",
++    progressMessage: "buscando comentarios do PR",
+     pluginName: "pr-comments",
+     pluginCommand: "pr-comments",
+     async getPromptWhileMarketplaceIsPrivate(args) {
+@@ -445802,7 +445802,7 @@ var init_release_notes = __esm(() => {
+ var releaseNotes, release_notes_default;
+ var init_release_notes2 = __esm(() => {
+   releaseNotes = {
+-    description: "View release notes",
++    description: "Ver notas de versao",
+     name: "release-notes",
+     type: "local",
+     supportsNonInteractive: true,
+@@ -446352,9 +446352,9 @@ var init_rename2 = __esm(() => {
+   rename9 = {
+     type: "local-jsx",
+     name: "rename",
+-    description: "Rename the current conversation",
++    description: "Renomear a conversa atual",
+     immediate: true,
+-    argumentHint: "[name]",
++    argumentHint: "[nome]",
+     load: () => Promise.resolve().then(() => (init_rename(), exports_rename))
+   };
+   rename_default = rename9;
+@@ -453003,9 +453003,9 @@ var init_resume2 = __esm(() => {
+   resume = {
+     type: "local-jsx",
+     name: "resume",
+-    description: "Resume a previous conversation",
++    description: "Retomar uma conversa anterior",
+     aliases: ["continue"],
+-    argumentHint: "[conversation id or search term]",
++    argumentHint: "[id da conversa ou termo de busca]",
+     load: () => Promise.resolve().then(() => (init_resume(), exports_resume))
+   };
+   resume_default = resume;
+@@ -453441,8 +453441,8 @@ var init_review = __esm(() => {
+   review = {
+     type: "prompt",
+     name: "review",
+-    description: "Review a pull request",
+-    progressMessage: "reviewing pull request",
++    description: "Revisar um pull request",
++    progressMessage: "revisando pull request",
+     contentLength: 0,
+     source: "builtin",
+     async getPromptForCommand(args) {
+@@ -453660,7 +453660,7 @@ var init_session2 = __esm(() => {
+     type: "local-jsx",
+     name: "session",
+     aliases: ["remote"],
+-    description: "Show remote session URL and QR code",
++    description: "Mostrar URL da sessao remota e QR code",
+     isEnabled: () => getIsRemoteMode(),
+     get isHidden() {
+       return !getIsRemoteMode();
+@@ -454023,7 +454023,7 @@ var init_skills3 = __esm(() => {
+   skills = {
+     type: "local-jsx",
+     name: "skills",
+-    description: "List available skills",
++    description: "Listar skills disponiveis",
+     load: () => Promise.resolve().then(() => (init_skills2(), exports_skills2))
+   };
+   skills_default = skills;
+@@ -454053,7 +454053,7 @@ var init_status3 = __esm(() => {
+   status = {
+     type: "local-jsx",
+     name: "status",
+-    description: "Show Claude Code status including version, model, account, API connectivity, and tool statuses",
++    description: "Mostrar status do Vertex, incluindo versao, modelo, conta, conectividade da API e ferramentas",
+     immediate: true,
+     load: () => Promise.resolve().then(() => (init_status2(), exports_status))
+   };
+@@ -454703,7 +454703,7 @@ var init_ultraplan = __esm(() => {
+   ultraplan_default = {
+     type: "local-jsx",
+     name: "ultraplan",
+-    description: `~10–30 min · Claude Code on the web drafts an advanced plan you can edit and approve. See ${CCR_TERMS_URL2}`,
++    description: `~10–30 min · Vertex na web cria um plano avancado que voce pode editar e aprovar. Veja ${CCR_TERMS_URL2}`,
+     argumentHint: "<prompt>",
+     isEnabled: () => false,
+     load: () => Promise.resolve({
+@@ -459512,7 +459512,7 @@ var init_tasks4 = __esm(() => {
+     type: "local-jsx",
+     name: "tasks",
+     aliases: ["bashes"],
+-    description: "List and manage background tasks",
++    description: "Listar e gerenciar tarefas em segundo plano",
+     load: () => Promise.resolve().then(() => (init_tasks3(), exports_tasks))
+   };
+   tasks_default = tasks;
+@@ -459722,8 +459722,8 @@ var init_security_review = __esm(() => {
+   init_promptShellExecution();
+   security_review_default = createMovedToPluginCommand({
+     name: "security-review",
+-    description: "Complete a security review of the pending changes on the current branch",
+-    progressMessage: "analyzing code changes for security risks",
++    description: "Fazer uma revisao de seguranca das alteracoes pendentes no branch atual",
++    progressMessage: "analisando riscos de seguranca nas alteracoes de codigo",
+     pluginName: "security-review",
+     pluginCommand: "security-review",
+     async getPromptWhileMarketplaceIsPrivate(_args, context6) {
+@@ -459804,7 +459804,7 @@ var init_usage3 = __esm(() => {
+   usage_default = {
+     type: "local-jsx",
+     name: "usage",
+-    description: "Show plan usage limits",
++    description: "Mostrar limites de uso do plano",
+     availability: ["claude-ai"],
+     load: () => Promise.resolve().then(() => (init_usage2(), exports_usage))
+   };
+@@ -459882,7 +459882,7 @@ var init_theme3 = __esm(() => {
+   theme = {
+     type: "local-jsx",
+     name: "theme",
+-    description: "Change the theme",
++    description: "Alterar o tema",
+     load: () => Promise.resolve().then(() => (init_theme2(), exports_theme))
+   };
+   theme_default = theme;
+@@ -459922,7 +459922,7 @@ var command5, vim_default;
+ var init_vim2 = __esm(() => {
+   command5 = {
+     name: "vim",
+-    description: "Toggle between Vim and Normal editing modes",
++    description: "Alternar entre os modos de edicao Vim e Normal",
+     supportsNonInteractive: false,
+     type: "local",
+     load: () => Promise.resolve().then(() => (init_vim(), exports_vim))
+@@ -460153,23 +460153,23 @@ function ThinkbackMenu(t0) {
+     t1 = hasGenerated ? [{
+       label: "Play animation",
+       value: "play",
+-      description: "Watch your year in review"
++      description: "Assistir sua retrospectiva do ano"
+     }, {
+       label: "Edit content",
+       value: "edit",
+-      description: "Modify the animation"
++      description: "Modificar a animacao"
+     }, {
+       label: "Fix errors",
+       value: "fix",
+-      description: "Fix validation or rendering issues"
++      description: "Corrigir validacao ou problemas de renderizacao"
+     }, {
+       label: "Regenerate",
+       value: "regenerate",
+-      description: "Create a new animation from scratch"
++      description: "Criar uma nova animacao do zero"
+     }] : [{
+       label: "Let's go!",
+       value: "regenerate",
+-      description: "Generate your personalized animation"
++      description: "Gerar sua animacao personalizada"
+     }];
+     $2[0] = hasGenerated;
+     $2[1] = t1;
+@@ -460509,7 +460509,7 @@ var init_thinkback2 = __esm(() => {
+   thinkback = {
+     type: "local-jsx",
+     name: "think-back",
+-    description: "Your 2025 Claude Code Year in Review",
++    description: "Sua retrospectiva 2025 do Vertex",
+     isEnabled: () => checkStatsigFeatureGate_CACHED_MAY_BE_STALE("tengu_thinkback"),
+     load: () => Promise.resolve().then(() => (init_thinkback(), exports_thinkback))
+   };
+@@ -460561,7 +460561,7 @@ var init_thinkback_play2 = __esm(() => {
+   thinkbackPlay = {
+     type: "local",
+     name: "thinkback-play",
+-    description: "Play the thinkback animation",
++    description: "Reproduzir a animacao thinkback",
+     isEnabled: () => checkStatsigFeatureGate_CACHED_MAY_BE_STALE("tengu_thinkback"),
+     isHidden: true,
+     supportsNonInteractive: false,
+@@ -463045,7 +463045,7 @@ var init_permissions4 = __esm(() => {
+     type: "local-jsx",
+     name: "permissions",
+     aliases: ["allowed-tools"],
+-    description: "Manage allow & deny tool permission rules",
++    description: "Gerenciar regras de permissao e bloqueio de ferramentas",
+     load: () => Promise.resolve().then(() => (init_permissions3(), exports_permissions))
+   };
+   permissions_default = permissions;
+@@ -463217,8 +463217,8 @@ var init_plan2 = __esm(() => {
+   plan = {
+     type: "local-jsx",
+     name: "plan",
+-    description: "Enable plan mode or view the current session plan",
+-    argumentHint: "[open|<description>]",
++    description: "Ativar modo de plano ou ver o plano da sessao atual",
++    argumentHint: "[open|<descricao>]",
+     load: () => Promise.resolve().then(() => (init_plan(), exports_plan))
+   };
+   plan_default = plan;
+@@ -463648,7 +463648,7 @@ var init_fast2 = __esm(() => {
+     type: "local-jsx",
+     name: "fast",
+     get description() {
+-      return `Toggle fast mode (${FAST_MODE_MODEL_DISPLAY} only)`;
++      return `Alternar modo rapido (somente ${FAST_MODE_MODEL_DISPLAY})`;
+     },
+     availability: ["claude-ai", "console"],
+     isEnabled: () => isFastModeEnabled(),
+@@ -464930,7 +464930,7 @@ var init_privacy_settings2 = __esm(() => {
+   privacySettings = {
+     type: "local-jsx",
+     name: "privacy-settings",
+-    description: "View and update your privacy settings",
++    description: "Ver e atualizar suas configuracoes de privacidade",
+     isEnabled: () => {
+       return isConsumerSubscriber();
+     },
+@@ -465197,38 +465197,38 @@ function ProviderChooser({
+     {
+       label: "Auto",
+       value: "auto",
+-      description: "Prefer local Ollama when available, otherwise guide you into OpenAI-compatible setup"
++      description: "Preferir Ollama local quando disponivel; caso contrario, guiar para configuracao OpenAI-compativel"
+     },
+     {
+       label: "Ollama",
+       value: "ollama",
+-      description: "Use a local Ollama model with no API key"
++      description: "Usar um modelo Ollama local sem chave de API"
+     },
+     {
+       label: "OpenAI-compatible",
+       value: "openai",
+-      description: "GPT-4o, DeepSeek, OpenRouter, Groq, LM Studio, and similar APIs"
++      description: "GPT-4o, DeepSeek, OpenRouter, Groq, LM Studio e APIs similares"
+     },
+     {
+       label: "Gemini",
+       value: "gemini",
+-      description: "Use Google Gemini with API key, access token, or local ADC"
++      description: "Usar Google Gemini com chave de API, token de acesso ou ADC local"
+     },
+     {
+       label: "Mistral",
+       value: "mistral",
+-      description: "Use Mistral with API key"
++      description: "Usar Mistral com chave de API"
+     },
+     {
+       label: "Codex",
+       value: "codex",
+-      description: "Use existing ChatGPT Codex CLI auth or env credentials"
++      description: "Usar autenticacao existente da CLI ChatGPT Codex ou credenciais de ambiente"
+     },
+     ...canUseCodexOAuth ? [
+       {
+         label: "Codex OAuth",
+         value: "codex-oauth",
+-        description: "Sign in with ChatGPT in your browser and store Codex tokens securely"
++        description: "Entrar com ChatGPT no navegador e armazenar tokens Codex com seguranca"
+       }
+     ] : []
+   ];
+@@ -465236,7 +465236,7 @@ function ProviderChooser({
+     options2.push({
+       label: "Clear saved profile",
+       value: "clear",
+-      description: "Remove .vertex-profile.json and return to normal startup"
++      description: "Remover .vertex-profile.json e voltar a inicializacao normal"
+     });
+   }
+   return /* @__PURE__ */ jsx_dev_runtime300.jsxDEV(Dialog, {
+@@ -465295,17 +465295,17 @@ function AutoGoalChooser({
+     {
+       label: "Balanced",
+       value: "balanced",
+-      description: "Strong everyday default for most users"
++      description: "Padrao forte para uso diario da maioria dos usuarios"
+     },
+     {
+       label: "Coding",
+       value: "coding",
+-      description: "Prefer coding-oriented local models or GPT-4o defaults"
++      description: "Preferir modelos locais voltados a codigo ou padroes GPT-4o"
+     },
+     {
+       label: "Latency",
+       value: "latency",
+-      description: "Prefer faster local models or gpt-4o-mini defaults"
++      description: "Preferir modelos locais mais rapidos ou padroes gpt-4o-mini"
+     }
+   ];
+   return /* @__PURE__ */ jsx_dev_runtime300.jsxDEV(Dialog, {
+@@ -465703,12 +465703,12 @@ function CodexCredentialStep({
+     {
+       label: "codexplan",
+       value: "codexplan",
+-      description: "GPT-5.4 with higher reasoning on the Codex backend"
++      description: "GPT-5.4 com raciocinio maior no backend Codex"
+     },
+     {
+       label: "codexspark",
+       value: "codexspark",
+-      description: "Faster Codex Spark tool loop profile"
++      description: "Perfil de loop de ferramentas Codex Spark mais rapido"
+     }
+   ];
+   return /* @__PURE__ */ jsx_dev_runtime300.jsxDEV(Dialog, {
+@@ -466158,7 +466158,7 @@ var init_provider2 = __esm(() => {
+   provider = {
+     type: "local-jsx",
+     name: "provider",
+-    description: "Manage API provider profiles",
++    description: "Gerenciar perfis de provedor de API",
+     load: () => Promise.resolve().then(() => (init_provider(), exports_provider))
+   };
+   provider_default = provider;
+@@ -467957,7 +467957,7 @@ var init_hooks3 = __esm(() => {
+   hooks = {
+     type: "local-jsx",
+     name: "hooks",
+-    description: "View hook configurations for tool events",
++    description: "Ver configuracoes de hooks para eventos de ferramentas",
+     immediate: true,
+     load: () => Promise.resolve().then(() => (init_hooks2(), exports_hooks))
+   };
+@@ -467991,7 +467991,7 @@ var init_files4 = __esm(() => {
+   files = {
+     type: "local",
+     name: "files",
+-    description: "List all files currently in context",
++    description: "Listar todos os arquivos atualmente no contexto",
+     isEnabled: () => process.env.USER_TYPE === "ant",
+     supportsNonInteractive: true,
+     load: () => Promise.resolve().then(() => (init_files3(), exports_files2))
+@@ -468175,8 +468175,8 @@ var init_branch2 = __esm(() => {
+     type: "local-jsx",
+     name: "branch",
+     aliases: ["fork"],
+-    description: "Create a branch of the current conversation at this point",
+-    argumentHint: "[name]",
++    description: "Criar uma ramificacao da conversa atual neste ponto",
++    argumentHint: "[nome]",
+     load: () => Promise.resolve().then(() => (init_branch(), exports_branch))
+   };
+   branch_default = branch;
+@@ -469064,7 +469064,7 @@ function ModelSelector(t0) {
+         t1 = [{
+           value: initialModel,
+           label: initialModel,
+-          description: "Current model (custom ID)"
++          description: "Modelo atual (ID personalizado)"
+         }, ...base2];
+         break bb0;
+       }
+@@ -474190,7 +474190,7 @@ var init_agents2 = __esm(() => {
+   agents = {
+     type: "local-jsx",
+     name: "agents",
+-    description: "Manage agent configurations",
++    description: "Gerenciar configuracoes de agentes",
+     load: () => Promise.resolve().then(() => (init_agents(), exports_agents))
+   };
+   agents_default = agents;
+@@ -474201,10 +474201,10 @@ var command6, auto_fix_default;
+ var init_auto_fix = __esm(() => {
+   command6 = {
+     name: "auto-fix",
+-    description: "Configure auto-fix: run lint/test after AI edits",
++    description: "Configurar auto-fix: rodar lint/teste depois das edicoes da IA",
+     isEnabled: () => true,
+     type: "prompt",
+-    progressMessage: "Configuring auto-fix...",
++    progressMessage: "configurando auto-fix...",
+     contentLength: 0,
+     source: "builtin",
+     async getPromptForCommand() {
+@@ -474258,7 +474258,7 @@ var init_plugin2 = __esm(() => {
+     type: "local-jsx",
+     name: "plugin",
+     aliases: ["plugins", "marketplace"],
+-    description: "Manage Claude Code plugins",
++    description: "Gerenciar plugins do Vertex",
+     immediate: true,
+     load: () => Promise.resolve().then(() => (init_plugin(), exports_plugin))
+   };
+@@ -474455,7 +474455,7 @@ var init_reload_plugins2 = __esm(() => {
+   reloadPlugins = {
+     type: "local",
+     name: "reload-plugins",
+-    description: "Activate pending plugin changes in the current session",
++    description: "Ativar alteracoes pendentes de plugins na sessao atual",
+     supportsNonInteractive: false,
+     load: () => Promise.resolve().then(() => (init_reload_plugins(), exports_reload_plugins))
+   };
+@@ -474478,7 +474478,7 @@ async function call56(_args, context6) {
+ var rewind, rewind_default;
+ var init_rewind = __esm(() => {
+   rewind = {
+-    description: `Restore the code and/or conversation to a previous point`,
++    description: `Restaurar codigo e/ou conversa para um ponto anterior`,
+     name: "rewind",
+     aliases: ["checkpoint"],
+     argumentHint: "",
+@@ -474678,7 +474678,7 @@ var init_heapdump2 = __esm(() => {
+   heapDump = {
+     type: "local",
+     name: "heapdump",
+-    description: "Dump the JS heap to ~/Desktop",
++    description: "Gravar dump do heap JS em ~/Desktop",
+     isHidden: true,
+     supportsNonInteractive: true,
+     load: () => Promise.resolve().then(() => (init_heapdump(), exports_heapdump))
+@@ -475155,7 +475155,7 @@ var init_bridge_kick = __esm(() => {
+   bridgeKick = {
+     type: "local",
+     name: "bridge-kick",
+-    description: "Inject bridge failure states for manual recovery testing",
++    description: "Injetar estados de falha da ponte para teste manual de recuperacao",
+     isEnabled: () => process.env.USER_TYPE === "ant",
+     supportsNonInteractive: false,
+     load: () => Promise.resolve({ call: call58 })
+@@ -475174,7 +475174,7 @@ var init_version = __esm(() => {
+   version2 = {
+     type: "local",
+     name: "version",
+-    description: "Print the version this session is running (not what autoupdate downloaded)",
++    description: "Mostrar a versao que esta sessao esta executando",
+     isEnabled: () => process.env.USER_TYPE === "ant",
+     supportsNonInteractive: true,
+     load: () => Promise.resolve({ call: call59 })
+@@ -475660,7 +475660,7 @@ var init_wiki2 = __esm(() => {
+   wiki = {
+     type: "local-jsx",
+     name: "wiki",
+-    description: "Initialize and inspect the Vertex project wiki",
++    description: "Inicializar e inspecionar a wiki do projeto Vertex",
+     argumentHint: "[init|status]",
+     immediate: true,
+     load: () => Promise.resolve().then(() => (init_wiki(), exports_wiki))
+@@ -477075,7 +477075,7 @@ async function installChromeNativeHostManifest(manifestBinaryPath) {
+   }
+   const manifest = {
+     name: NATIVE_HOST_IDENTIFIER,
+-    description: "Claude Code Browser Extension Native Host",
++    description: "Host nativo da extensao de navegador do Vertex",
+     path: manifestBinaryPath,
+     type: "stdio",
+     allowed_origins: [
+@@ -477611,7 +477611,7 @@ var init_chrome2 = __esm(() => {
+   init_state();
+   command8 = {
+     name: "chrome",
+-    description: "Claude in Chrome (Beta) settings",
++    description: "Configuracoes do Vertex no Chrome (Beta)",
+     availability: ["claude-ai"],
+     isEnabled: () => !getIsNonInteractiveSession(),
+     type: "local-jsx",
+@@ -477647,7 +477647,7 @@ var init_stickers2 = __esm(() => {
+   stickers = {
+     type: "local",
+     name: "stickers",
+-    description: "Order Claude Code stickers",
++    description: "Pedir adesivos do Vertex",
+     supportsNonInteractive: false,
+     load: () => Promise.resolve().then(() => (init_stickers(), exports_stickers))
+   };
+@@ -477858,8 +477858,8 @@ var init_advisor2 = __esm(() => {
+   advisor = {
+     type: "local",
+     name: "advisor",
+-    description: "Configure the advisor model",
+-    argumentHint: "[<model>|off]",
++    description: "Configurar o modelo consultor",
++    argumentHint: "[<modelo>|off]",
+     isEnabled: () => canUserConfigureAdvisor(),
+     get isHidden() {
+       return !canUserConfigureAdvisor();
+@@ -477912,7 +477912,7 @@ function registerBundledSkill(definition) {
+     agent: definition.agent,
+     isEnabled: definition.isEnabled,
+     isHidden: !(definition.userInvocable ?? true),
+-    progressMessage: "running",
++    progressMessage: "executando",
+     getPromptForCommand
+   };
+   bundledSkills.push(command9);
+@@ -478315,7 +478315,7 @@ var init_exit2 = __esm(() => {
+     type: "local-jsx",
+     name: "exit",
+     aliases: ["quit"],
+-    description: "Exit the REPL",
++    description: "Sair do REPL",
+     immediate: true,
+     load: () => Promise.resolve().then(() => (init_exit(), exports_exit))
+   };
+@@ -478386,11 +478386,11 @@ function ExportDialog({
+   const options2 = [{
+     label: "Copy to clipboard",
+     value: "clipboard",
+-    description: "Copy the conversation to your system clipboard"
++    description: "Copiar a conversa para a area de transferencia do sistema"
+   }, {
+     label: "Save to file",
+     value: "file",
+-    description: "Save the conversation to a file in the current directory"
++    description: "Salvar a conversa em um arquivo no diretorio atual"
+   }];
+   function renderInputGuide2(exitState) {
+     if (showFilenameInput) {
+@@ -478668,8 +478668,8 @@ var init_export2 = __esm(() => {
+   exportCommand = {
+     type: "local-jsx",
+     name: "export",
+-    description: "Export the current conversation to a file or clipboard",
+-    argumentHint: "[filename]",
++    description: "Exportar a conversa atual para arquivo ou area de transferencia",
++    argumentHint: "[arquivo]",
+     load: () => Promise.resolve().then(() => (init_export(), exports_export))
+   };
+   export_default = exportCommand;
+@@ -479136,7 +479136,7 @@ var init_model3 = __esm(() => {
+     get description() {
+       return `Set the AI model for Claude Code (currently ${renderModelName(getMainLoopModel())})`;
+     },
+-    argumentHint: "[model]",
++    argumentHint: "[modelo]",
+     get immediate() {
+       return shouldInferenceConfigCommandBeImmediate();
+     },
+@@ -479408,9 +479408,9 @@ var init_tag2 = __esm(() => {
+   tag2 = {
+     type: "local-jsx",
+     name: "tag",
+-    description: "Toggle a searchable tag on the current session",
++    description: "Alternar uma tag pesquisavel na sessao atual",
+     isEnabled: () => process.env.USER_TYPE === "ant",
+-    argumentHint: "<tag-name>",
++    argumentHint: "<nome-da-tag>",
+     load: () => Promise.resolve().then(() => (init_tag(), exports_tag))
+   };
+   tag_default = tag2;
+@@ -479433,7 +479433,7 @@ var init_output_style = __esm(() => {
+   outputStyle = {
+     type: "local-jsx",
+     name: "output-style",
+-    description: "Deprecated: use /config to change output style",
++    description: "Obsoleto: use /config para alterar o estilo de saida",
+     isHidden: true,
+     load: () => Promise.resolve().then(() => exports_output_style)
+   };
+@@ -479961,7 +479961,7 @@ var init_remote_env2 = __esm(() => {
+   remote_env_default = {
+     type: "local-jsx",
+     name: "remote-env",
+-    description: "Configure the default remote environment for teleport sessions",
++    description: "Configurar o ambiente remoto padrao para sessoes teleport",
+     isEnabled: () => isClaudeAISubscriber() && isPolicyAllowed("allow_remote_sessions"),
+     get isHidden() {
+       return !isClaudeAISubscriber() || !isPolicyAllowed("allow_remote_sessions");
+@@ -480024,7 +480024,7 @@ var init_upgrade2 = __esm(() => {
+   upgrade = {
+     type: "local-jsx",
+     name: "upgrade",
+-    description: "Upgrade to Max for higher rate limits and more Opus",
++    description: "Atualizar para Max para limites maiores e mais Opus",
+     availability: ["claude-ai"],
+     isEnabled: () => !isEnvTruthy(process.env.DISABLE_UPGRADE_COMMAND) && getSubscriptionType() !== "enterprise",
+     load: () => Promise.resolve().then(() => (init_upgrade(), exports_upgrade))
+@@ -480259,7 +480259,7 @@ var init_rate_limit_options2 = __esm(() => {
+   rateLimitOptions = {
+     type: "local-jsx",
+     name: "rate-limit-options",
+-    description: "Show options when rate limit is reached",
++    description: "Mostrar opcoes quando o limite de taxa for atingido",
+     isEnabled: () => {
+       if (!isClaudeAISubscriber()) {
+         return false;
+@@ -480278,11 +480278,11 @@ var init_statusline = __esm(() => {
+   init_constants3();
+   statusline = {
+     type: "prompt",
+-    description: "Set up Claude Code's status line UI",
++    description: "Configurar a UI da linha de status do Vertex",
+     contentLength: 0,
+     aliases: [],
+     name: "statusline",
+-    progressMessage: "setting up statusLine",
++    progressMessage: "configurando statusLine",
+     allowedTools: [AGENT_TOOL_NAME, "Read(~/**)", "Edit(~/.claude/settings.json)"],
+     source: "builtin",
+     disableNonInteractive: true,
+@@ -480315,7 +480315,7 @@ function EffortPicker({ onSelect, onCancel }) {
+         isCurrent: false
+       }, undefined, false, undefined, this),
+       value: "auto",
+-      description: "Use the default effort level for your model",
++      description: "Usar o nivel de esforco padrao do seu modelo",
+       isAvailable: true
+     },
+     ...availableLevels.map((level) => {
+@@ -480681,7 +480681,7 @@ var init_effort3 = __esm(() => {
+   effort_default = {
+     type: "local-jsx",
+     name: "effort",
+-    description: "Set effort level for model usage",
++    description: "Definir nivel de esforco para uso do modelo",
+     argumentHint: "[low|medium|high|max|auto]",
+     get immediate() {
+       return shouldInferenceConfigCommandBeImmediate();
+@@ -483490,7 +483490,7 @@ var init_stats3 = __esm(() => {
+   stats = {
+     type: "local-jsx",
+     name: "stats",
+-    description: "Show your Claude Code usage statistics and activity",
++    description: "Mostrar estatisticas e atividade de uso do Vertex",
+     load: () => Promise.resolve().then(() => (init_stats2(), exports_stats))
+   };
+   stats_default = stats;
+@@ -483684,7 +483684,7 @@ var init_buddy2 = __esm(() => {
+   buddy = {
+     type: "local-jsx",
+     name: "buddy",
+-    description: "Hatch, pet, and manage your Vertex companion",
++    description: "Criar, cuidar e gerenciar seu companheiro Vertex",
+     immediate: true,
+     argumentHint: "[status|mute|unmute|help]",
+     load: () => Promise.resolve().then(() => (init_buddy(), exports_buddy))
+@@ -485687,9 +485687,9 @@ Find something genuinely interesting or amusing from the session summaries.`,
+   usageReport = {
+     type: "prompt",
+     name: "insights",
+-    description: "Generate a report analyzing your Claude Code sessions",
++    description: "Gerar um relatorio analisando suas sessoes do Vertex",
+     contentLength: 0,
+-    progressMessage: "analyzing your sessions",
++    progressMessage: "analisando suas sessoes",
+     source: "builtin",
+     async getPromptForCommand(_args) {
+       const { insights, htmlPath, data } = await generateUsageReport();
+@@ -486009,9 +486009,9 @@ var init_commands2 = __esm(() => {
+   usageReport2 = {
+     type: "prompt",
+     name: "insights",
+-    description: "Generate a report analyzing your Claude Code sessions",
++    description: "Gerar um relatorio analisando suas sessoes do Vertex",
+     contentLength: 0,
+-    progressMessage: "analyzing your sessions",
++    progressMessage: "analisando suas sessoes",
+     source: "builtin",
+     async getPromptForCommand(args, context6) {
+       const real = (await Promise.resolve().then(() => (init_insights(), exports_insights))).default;
+@@ -554400,9 +554400,9 @@ When all agents have reported, render the final table and a one-line summary (e.
+ function registerBatchSkill() {
+   registerBundledSkill({
+     name: "batch",
+-    description: "Research and plan a large-scale change, then execute it in parallel across 5–30 isolated worktree agents that each open a PR.",
+-    whenToUse: "Use when the user wants to make a sweeping, mechanical change across many files (migrations, refactors, bulk renames) that can be decomposed into independent parallel units.",
+-    argumentHint: "<instruction>",
++    description: "Pesquisar e planejar uma mudanca grande, depois executar em paralelo com 5-30 agentes em worktrees isoladas, cada um abrindo um PR.",
++    whenToUse: "Use quando o usuario quer fazer uma mudanca ampla e mecanica em muitos arquivos (migracoes, refatoracoes, renomeacoes em massa) que pode ser decomposta em unidades paralelas independentes.",
++    argumentHint: "<instrucao>",
+     userInvocable: true,
+     disableModelInvocation: true,
+     async getPromptForCommand(args) {
+@@ -554441,8 +554441,8 @@ var init_batch = __esm(() => {
+ function registerClaudeInChromeSkill() {
+   registerBundledSkill({
+     name: "claude-in-chrome",
+-    description: "Automates your Chrome browser to interact with web pages - clicking elements, filling forms, capturing screenshots, reading console logs, and navigating sites. Opens pages in new tabs within your existing Chrome session. Requires site-level permissions before executing (configured in the extension).",
+-    whenToUse: "When the user wants to interact with web pages, automate browser tasks, capture screenshots, read console logs, or perform any browser-based actions. Always invoke BEFORE attempting to use any mcp__claude-in-chrome__* tools.",
++    description: "Automatiza o Chrome para interagir com paginas: clicar, preencher formularios, capturar screenshots, ler logs do console e navegar. Abre paginas em novas abas na sessao atual do Chrome. Exige permissoes por site antes de executar.",
++    whenToUse: "Quando o usuario quiser interagir com paginas, automatizar tarefas no navegador, capturar screenshots, ler logs do console ou executar acoes no browser. Sempre invoque antes de tentar usar ferramentas mcp__claude-in-chrome__*.",
+     allowedTools: CLAUDE_IN_CHROME_MCP_TOOLS,
+     userInvocable: true,
+     isEnabled: () => shouldAutoEnableClaudeInChrome(),
+@@ -554476,9 +554476,9 @@ import { open as open17, stat as stat50 } from "fs/promises";
+ function registerDebugSkill() {
+   registerBundledSkill({
+     name: "debug",
+-    description: process.env.USER_TYPE === "ant" ? "Debug your current Claude Code session by reading the session debug log. Includes all event logging" : "Enable debug logging for this session and help diagnose issues",
++    description: process.env.USER_TYPE === "ant" ? "Depurar a sessao atual do Vertex lendo o log de debug da sessao. Inclui todos os eventos" : "Ativar log de debug nesta sessao e ajudar a diagnosticar problemas",
+     allowedTools: ["Read", "Grep", "Glob"],
+-    argumentHint: "[issue description]",
++    argumentHint: "[descricao do problema]",
+     disableModelInvocation: true,
+     userInvocable: true,
+     async getPromptForCommand(args) {
+@@ -555174,9 +555174,9 @@ ${reschedulePrompt}
+ function registerLoopSkill() {
+   registerBundledSkill({
+     name: "loop",
+-    description: "Run a prompt on a fixed interval or dynamically reschedule it, including bare maintenance-mode loops.",
+-    whenToUse: "When the user wants to poll for status, babysit a workflow, run recurring maintenance, or keep re-running a prompt within the current session.",
+-    argumentHint: "[interval] [prompt]",
++    description: "Rodar um prompt em intervalo fixo ou reagendar dinamicamente, inclusive loops simples de manutencao.",
++    whenToUse: "Quando o usuario quer consultar status repetidamente, acompanhar um fluxo, rodar manutencao recorrente ou repetir um prompt na sessao atual.",
++    argumentHint: "[intervalo] [prompt]",
+     userInvocable: true,
+     isEnabled: isKairosCronEnabled,
+     async getPromptForCommand(args) {
+@@ -555206,7 +555206,7 @@ var init_loop = __esm(() => {
+ function registerSimplifySkill() {
+   registerBundledSkill({
+     name: "simplify",
+-    description: "Review changed code for reuse, quality, and efficiency, then fix any issues found.",
++    description: "Revisar codigo alterado quanto a reutilizacao, qualidade e eficiencia, depois corrigir problemas encontrados.",
+     userInvocable: true,
+     async getPromptForCommand(args) {
+       let prompt = SIMPLIFY_PROMPT;
+@@ -568630,8 +568630,8 @@ var init_install = __esm(() => {
+   install = {
+     type: "local-jsx",
+     name: "install",
+-    description: "Install Claude Code native build",
+-    argumentHint: "[options]",
++    description: "Instalar build nativo do Vertex",
++    argumentHint: "[opcoes]",
+     async call(onDone, _context, args) {
+       const force = args.includes("--force");
+       const nonFlagArgs = args.filter((arg) => !arg.startsWith("--"));

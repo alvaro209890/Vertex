@@ -2,8 +2,8 @@
 
 # 🔷 Vertex
 
-Standalone Vertex CLI app with a bundled OpenClaude-derived tool runtime and a
-local DeepSeek proxy.
+Standalone Vertex CLI app with a bundled tool runtime and a local DeepSeek
+proxy.
 
 Vertex was created by Alvaro Emanuel Alves Araujo. It is not an Anthropic
 product. The bundled assistant is instructed to identify as Vertex and to make
@@ -25,13 +25,14 @@ Current bundled Vertex CLI version: `1.1.4`.
 - Standalone `vertex` app; no external `openclaude` command is required
 - First run prompts for your DeepSeek API key interactively
 - `vertex-proxy` is a proxy-only support command; normal users run `vertex`
-- Bundled agent/tool runtime derived from OpenClaude
+- Bundled agent/tool runtime vendored inside this project
 - DeepSeek-native backend with Anthropic-compatible Messages API
 - Assistant identity pinned to Vertex, created by Alvaro Emanuel Alves Araujo
 - Per-model routing: Opus/Sonnet/Haiku → v4-flash by default
 - Streaming, tool use, reasoning/thinking block handling
 - Green CLI status text for responding, thinking, editing, and speech-bubble states
-- Brazilian Portuguese text for the main work/status messages in the bundled CLI
+- Brazilian Portuguese text for the main work/status messages and core `/`
+  commands in the bundled CLI
 - Change API key anytime: `vertex --logout`
 
 ## Quick Start
@@ -176,7 +177,9 @@ Open Settings, search for `claude-code.environmentVariables`, choose **Edit in s
 ]
 ```
 
-Reload the extension. If the extension shows a login screen, choose the Anthropic Console path once; the local proxy still handles model traffic after the environment variables are active.
+Reload the extension. If the extension shows a login screen, choose the API-key
+path once; the local proxy still handles model traffic after the environment
+variables are active.
 
 ### JetBrains ACP
 

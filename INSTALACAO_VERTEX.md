@@ -158,7 +158,8 @@ Se o comando `vertex` nao estiver no PATH:
 ## Trocar a Chave DeepSeek
 
 ```bash
-vertex --logout
+vertex /logout
+vertex auth login
 ```
 
 Depois cole a nova chave DeepSeek quando solicitado.

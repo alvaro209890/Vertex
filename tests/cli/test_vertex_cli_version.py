@@ -73,3 +73,26 @@ def test_vendored_vertex_cli_identity_mentions_creator_and_deepseek() -> None:
         in cli_bundle
     )
     assert "You are Claude Code, an AI assistant that orchestrates" not in cli_bundle
+
+
+def test_vendored_vertex_cli_core_slash_commands_are_pt_br() -> None:
+    repo = Path(__file__).resolve().parents[2]
+    cli_bundle = (repo / "vendor" / "vertex-cli" / "dist" / "cli.mjs").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'description: "Adicionar um novo diretorio de trabalho"' in cli_bundle
+    assert 'description: "Abrir painel de configuracao"' in cli_bundle
+    assert 'description: "Mostrar ajuda e comandos disponiveis"' in cli_bundle
+    assert 'description: "Gerenciar servidores MCP"' in cli_bundle
+    assert 'description: "Limpar a chave DeepSeek"' in cli_bundle
+    assert 'description: "Gerenciar plugins do Vertex"' in cli_bundle
+    assert 'progressMessage: "buscando comentarios do PR"' in cli_bundle
+    assert 'argumentHint: "<instrucoes opcionais para o resumo>"' in cli_bundle
+
+    assert 'description: "Add a new working directory"' not in cli_bundle
+    assert 'description: "Open config panel"' not in cli_bundle
+    assert 'description: "Show help and available commands"' not in cli_bundle
+    assert 'description: "Manage MCP servers"' not in cli_bundle
+    assert 'description: "Clear the DeepSeek API key"' not in cli_bundle
+    assert 'description: "Manage Claude Code plugins"' not in cli_bundle

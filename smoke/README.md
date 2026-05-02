@@ -34,9 +34,9 @@ uv run pytest smoke -n 0 -s --tb=short
 Provider product E2E runs once per configured provider, independent of `MODEL`,
 `MODEL_OPUS`, `MODEL_SONNET`, and `MODEL_HAIKU`. Defaults come from the provider
 catalog/docs and can be overridden with `FCC_SMOKE_MODEL_<PROVIDER>`, for example
-`FCC_SMOKE_MODEL_DEEPSEEK=deepseek-v4-pro` (or `deepseek-v4-flash`). If no provider smoke model is
-configured, live product smoke fails as `missing_env` unless you explicitly set
-`FCC_ALLOW_NO_PROVIDER_SMOKE=1`.
+`FCC_SMOKE_MODEL_DEEPSEEK=deepseek-v4-pro` (or `deepseek-v4-flash`). If no
+provider smoke model is configured, live product smoke fails as `missing_env`
+unless you explicitly set `FCC_ALLOW_NO_PROVIDER_SMOKE=1`.
 
 ## Targets
 
@@ -101,7 +101,8 @@ uv run pytest smoke/product -n 0 -s --tb=short
 - `FCC_SMOKE_MODEL_DEEPSEEK`: optional DeepSeek smoke model override. Values may
   include the `deepseek/` provider prefix or just the DeepSeek model name.
 - `FCC_SMOKE_TIMEOUT_S`: per-request/subprocess timeout, default `45`.
-- `FCC_SMOKE_CLAUDE_BIN`: Vertex/Claude-compatible CLI executable name, default `claude`.
+- `FCC_SMOKE_CLAUDE_BIN`: external Anthropic-compatible CLI executable name used
+  by smoke tests, default `claude`.
 - `FCC_SMOKE_TELEGRAM_CHAT_ID`: Telegram chat/user ID for send/edit/delete.
 - `FCC_SMOKE_DISCORD_CHANNEL_ID`: Discord channel ID for send/edit/delete.
 - `FCC_SMOKE_INTERACTIVE=1`: enables manual inbound Telegram/Discord checks.
