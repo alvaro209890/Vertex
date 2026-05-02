@@ -148,6 +148,72 @@ def test_build_request_body_strips_custom_tool_type(deepseek_provider):
     ]
 
 
+def test_build_request_body_normalizes_missing_tool_schema(deepseek_provider):
+    request = MessagesRequest.model_validate(
+        {
+            "model": "m",
+            "messages": [{"role": "user", "content": "x"}],
+            "tools": [
+                {
+                    "name": "computer",
+                    "type": "computer_20241022",
+                    "display_width_px": 1024,
+                    "display_height_px": 768,
+                    "display_number": 1,
+                    "input_schema": None,
+                }
+            ],
+        }
+    )
+
+    body = deepseek_provider._build_request_body(request)
+
+    assert body["tools"] == [
+        {
+            "name": "computer",
+            "input_schema": {"type": "object", "properties": {}},
+        }
+    ]
+
+
+def test_build_request_body_strips_deepseek_unsupported_tool_fields(
+    deepseek_provider,
+):
+    request = MessagesRequest.model_validate(
+        {
+            "model": "m",
+            "messages": [{"role": "user", "content": "x"}],
+            "tools": [
+                {
+                    "name": "Read",
+                    "description": "Read a file",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {"file_path": {"type": "string"}},
+                        "additionalProperties": False,
+                    },
+                    "type": "custom",
+                    "strict": True,
+                    "defer_loading": True,
+                }
+            ],
+        }
+    )
+
+    body = deepseek_provider._build_request_body(request)
+
+    assert body["tools"] == [
+        {
+            "name": "Read",
+            "description": "Read a file",
+            "input_schema": {
+                "type": "object",
+                "properties": {"file_path": {"type": "string"}},
+            },
+        }
+    ]
+
+
 def test_build_request_body_respects_global_thinking_disable():
     provider = DeepSeekProvider(
         ProviderConfig(

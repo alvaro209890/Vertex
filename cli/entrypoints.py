@@ -361,8 +361,6 @@ def cli() -> None:
     if _handle_disabled_anthropic_token_setup():
         return
 
-    _run_wizard_if_needed()
-
     vertex_cli = _vertex_cli_bin()
     if not vertex_cli.is_file():
         print(f"Error: Vertex CLI runtime not found at {vertex_cli}")
@@ -375,6 +373,12 @@ def cli() -> None:
         print("Error: Node.js is required to run the Vertex CLI runtime.")
         print("Install Node.js 20+ and run vertex again.")
         sys.exit(1)
+
+    if _is_version_request():
+        proc = subprocess.run([node_bin, str(vertex_cli), *sys.argv[1:]])
+        sys.exit(proc.returncode)
+
+    _run_wizard_if_needed()
 
     port = os.environ.get("VERTEX_PORT", "8083")
     _ensure_vertex_cli_settings(port)

@@ -21,6 +21,15 @@ _UNSUPPORTED_MESSAGE_BLOCK_TYPES = frozenset(
         "web_fetch_tool_result",
     }
 )
+_ALLOWED_DEEPSEEK_TOOL_KEYS = frozenset(
+    {
+        "name",
+        "description",
+        "input_schema",
+        "cache_control",
+    }
+)
+_EMPTY_INPUT_SCHEMA: dict[str, Any] = {"type": "object", "properties": {}}
 
 
 def _is_server_listed_tool(tool: Mapping[str, Any]) -> bool:
@@ -82,7 +91,6 @@ def _validate_deepseek_native_request_dict(data: dict[str, Any]) -> None:
         _walk_block_list_for_unsupported(system, where="system")
 
 
-
 def _strip_additional_properties(schema: Any) -> Any:
     if isinstance(schema, dict):
         new_schema = {}
@@ -95,8 +103,33 @@ def _strip_additional_properties(schema: Any) -> Any:
         return [_strip_additional_properties(v) for v in schema]
     return schema
 
+
+def _normalize_deepseek_input_schema(schema: Any) -> Any:
+    """DeepSeek requires custom tool schemas to be JSON objects or booleans."""
+    if schema is None:
+        return dict(_EMPTY_INPUT_SCHEMA)
+    if isinstance(schema, bool):
+        return schema
+    if isinstance(schema, dict):
+        normalized = _strip_additional_properties(schema)
+        return normalized or dict(_EMPTY_INPUT_SCHEMA)
+    return dict(_EMPTY_INPUT_SCHEMA)
+
+
+def _sanitize_deepseek_custom_tool(tool: dict[str, Any]) -> dict[str, Any]:
+    sanitized = {
+        key: value
+        for key, value in tool.items()
+        if key in _ALLOWED_DEEPSEEK_TOOL_KEYS and value is not None
+    }
+    sanitized["input_schema"] = _normalize_deepseek_input_schema(
+        sanitized.get("input_schema")
+    )
+    return sanitized
+
+
 def sanitize_deepseek_tools_for_native(tools: Any) -> Any:
-    """Remove fields DeepSeek treats as server-tool discriminators on custom tools."""
+    """Keep custom tools in the subset accepted by DeepSeek's Anthropic endpoint."""
     if not isinstance(tools, list):
         return tools
 
@@ -105,11 +138,7 @@ def sanitize_deepseek_tools_for_native(tools: Any) -> Any:
         if not isinstance(tool, dict) or _is_server_listed_tool(tool):
             sanitized.append(tool)
             continue
-        new_tool = dict(tool)
-        new_tool.pop("type", None)
-        if "input_schema" in new_tool:
-            new_tool["input_schema"] = _strip_additional_properties(new_tool["input_schema"])
-        sanitized.append(new_tool)
+        sanitized.append(_sanitize_deepseek_custom_tool(tool))
     return sanitized
 
 

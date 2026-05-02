@@ -107,7 +107,7 @@ def test_vertex_cli_bin_allows_explicit_override(tmp_path: Path) -> None:
 
 
 def test_cli_launches_vendored_vertex_runtime(tmp_path: Path) -> None:
-    """cli() launches the configured Vertex runtime without resolving openclaude."""
+    """cli() launches the vendored runtime for version checks without startup."""
     import sys
 
     from cli import entrypoints
@@ -118,8 +118,8 @@ def test_cli_launches_vendored_vertex_runtime(tmp_path: Path) -> None:
     node_bin.write_text("", encoding="utf-8")
 
     with (
-        patch.object(entrypoints, "_run_wizard_if_needed"),
-        patch.object(entrypoints, "_start_proxy", return_value=True),
+        patch.object(entrypoints, "_run_wizard_if_needed") as wizard,
+        patch.object(entrypoints, "_start_proxy", return_value=True) as start_proxy,
         patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
         patch.dict(os.environ, {"VERTEX_CLI_BIN": str(vertex_bin)}, clear=False),
         patch.object(sys, "argv", ["vertex", "--version"]),
@@ -132,7 +132,9 @@ def test_cli_launches_vendored_vertex_runtime(tmp_path: Path) -> None:
 
     run.assert_called_once()
     assert run.call_args.args[0] == [str(node_bin), str(vertex_bin), "--version"]
-    assert run.call_args.kwargs["env"]["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:8083"
+    assert "env" not in run.call_args.kwargs
+    wizard.assert_not_called()
+    start_proxy.assert_not_called()
     exit_.assert_called_once_with(7)
 
 
@@ -149,8 +151,8 @@ def test_cli_version_does_not_print_launching_banner(tmp_path: Path) -> None:
     printed: list[str] = []
 
     with (
-        patch.object(entrypoints, "_run_wizard_if_needed"),
-        patch.object(entrypoints, "_start_proxy", return_value=True),
+        patch.object(entrypoints, "_run_wizard_if_needed") as wizard,
+        patch.object(entrypoints, "_start_proxy", return_value=True) as start_proxy,
         patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
         patch.dict(os.environ, {"VERTEX_CLI_BIN": str(vertex_bin)}, clear=False),
         patch.object(sys, "argv", ["vertex", "--version"]),
@@ -166,6 +168,8 @@ def test_cli_version_does_not_print_launching_banner(tmp_path: Path) -> None:
             entrypoints.cli()
 
     assert "Launching Vertex CLI..." not in printed
+    wizard.assert_not_called()
+    start_proxy.assert_not_called()
 
 
 def test_cli_creates_default_vertex_settings(tmp_path: Path) -> None:
@@ -188,7 +192,7 @@ def test_cli_creates_default_vertex_settings(tmp_path: Path) -> None:
         patch.object(entrypoints, "VERTEX_CLI_CONFIG_DIR", settings_file.parent),
         patch.object(entrypoints, "VERTEX_CLI_SETTINGS_FILE", settings_file),
         patch.dict(os.environ, {"VERTEX_CLI_BIN": str(vertex_bin)}, clear=False),
-        patch.object(sys, "argv", ["vertex", "--version"]),
+        patch.object(sys, "argv", ["vertex"]),
         patch("subprocess.run") as run,
         patch("sys.exit", side_effect=SystemExit),
         suppress(SystemExit),
@@ -238,7 +242,7 @@ def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
         patch.object(entrypoints, "VERTEX_CLI_CONFIG_DIR", settings_file.parent),
         patch.object(entrypoints, "VERTEX_CLI_SETTINGS_FILE", settings_file),
         patch.dict(os.environ, {"VERTEX_CLI_BIN": str(vertex_bin)}, clear=False),
-        patch.object(sys, "argv", ["vertex", "--version"]),
+        patch.object(sys, "argv", ["vertex"]),
         patch("subprocess.run") as run,
         patch("sys.exit", side_effect=SystemExit),
         suppress(SystemExit),
