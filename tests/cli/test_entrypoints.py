@@ -260,6 +260,53 @@ def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
     assert "provider" not in settings
 
 
+def test_start_proxy_reuses_matching_running_proxy() -> None:
+    """A matching proxy version is reused."""
+    from cli import entrypoints
+
+    with (
+        patch.object(entrypoints, "_installed_vertex_version", return_value="1.1.6"),
+        patch.object(
+            entrypoints,
+            "_read_proxy_health",
+            return_value={"status": "healthy", "version": "1.1.6"},
+        ),
+        patch.object(entrypoints, "_terminate_vertex_proxy_processes") as terminate,
+        patch.object(entrypoints, "_wait_for_proxy_down") as wait_down,
+        patch("subprocess.Popen") as popen,
+    ):
+        assert entrypoints._start_proxy() is True
+
+    terminate.assert_not_called()
+    wait_down.assert_not_called()
+    popen.assert_not_called()
+
+
+def test_start_proxy_restarts_stale_running_proxy() -> None:
+    """A running proxy without the installed version is terminated and replaced."""
+    from cli import entrypoints
+
+    with (
+        patch.object(entrypoints, "_installed_vertex_version", return_value="1.1.6"),
+        patch.object(
+            entrypoints,
+            "_read_proxy_health",
+            return_value={"status": "healthy", "version": "1.1.5"},
+        ),
+        patch.object(
+            entrypoints, "_terminate_vertex_proxy_processes", return_value=1
+        ) as terminate,
+        patch.object(entrypoints, "_wait_for_proxy_down") as wait_down,
+        patch.object(entrypoints, "_wait_for_proxy_health", return_value=True),
+        patch("subprocess.Popen") as popen,
+    ):
+        assert entrypoints._start_proxy() is True
+
+    terminate.assert_called_once()
+    wait_down.assert_called_once_with("8083")
+    popen.assert_called_once()
+
+
 def test_cli_logout_updates_deepseek_key_before_auto_wizard(tmp_path: Path) -> None:
     """`vertex /logout` updates the DeepSeek key even when the old key is empty."""
     import sys

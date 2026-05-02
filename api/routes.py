@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from loguru import logger
 
+from api.metrics import metrics_store
 from config.settings import Settings
 from core.anthropic import get_token_count
 
@@ -13,6 +14,7 @@ from .models.responses import ModelResponse, ModelsListResponse
 from .services import ClaudeProxyService
 
 router = APIRouter()
+PACKAGE_NAME = "vertex-deepseek"
 
 
 AVAILABLE_MODEL_OPTIONS = [
@@ -73,6 +75,16 @@ def _probe_response(allow: str) -> Response:
     return Response(status_code=204, headers={"Allow": allow})
 
 
+def _installed_vertex_version() -> str:
+    """Return the installed Vertex package version for launcher health checks."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version(PACKAGE_NAME)
+    except PackageNotFoundError:
+        return "unknown"
+
+
 # =============================================================================
 # Routes
 # =============================================================================
@@ -129,7 +141,7 @@ async def probe_root(_auth=Depends(require_api_key)):
 @router.get("/health")
 async def health():
     """Health check endpoint."""
-    return {"status": "healthy"}
+    return {"status": "healthy", "version": _installed_vertex_version()}
 
 
 @router.api_route("/health", methods=["HEAD", "OPTIONS"])
@@ -165,9 +177,6 @@ async def stop_cli(request: Request, _auth=Depends(require_api_key)):
     count = await handler.stop_all_tasks()
     logger.info("STOP_CLI: source=handler cancelled_count={}", count)
     return {"status": "stopped", "cancelled_count": count}
-
-from api.metrics import metrics_store
-from fastapi.middleware.cors import CORSMiddleware
 
 @router.get("/api/metrics")
 async def get_metrics():

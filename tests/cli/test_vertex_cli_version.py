@@ -14,12 +14,16 @@ def test_vendored_vertex_cli_version_matches_python_package() -> None:
         (repo / "vendor" / "vertex-cli" / "package.json").read_text(encoding="utf-8")
     )
 
-    assert 'version = "1.1.5"' in pyproject
-    assert cli_package["version"] == "1.1.5"
-    assert 'version("1.1.5 (Vertex)"' in cli_bundle
-    assert 'console.log(`${"1.1.5"} (Vertex)`)' in cli_bundle
-    assert 'vertex ${RESET}${rgb(...ACCENT)}v${"1.1.5"}' in cli_bundle
+    assert 'version = "1.1.6"' in pyproject
+    assert cli_package["version"] == "1.1.6"
+    assert 'version("1.1.6 (Vertex)"' in cli_bundle
+    assert 'console.log(`${"1.1.6"} (Vertex)`)' in cli_bundle
+    assert 'vertex ${RESET}${rgb(...ACCENT)}v${"1.1.6"}' in cli_bundle
     assert 'vertex ${RESET}${rgb(...ACCENT)}v${"1.0.0"}' not in cli_bundle
+    assert (
+        'return { name: "Vertex", model: resolvedModel, baseUrl: anthropicBaseUrl, isLocal: true };'
+        in cli_bundle
+    )
 
 
 def test_vendored_vertex_cli_status_colors_are_green() -> None:

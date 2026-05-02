@@ -13,6 +13,7 @@ VERTEX_CLI_CONFIG_DIR = Path.home() / ".vertex"
 VERTEX_CLI_SETTINGS_FILE = VERTEX_CLI_CONFIG_DIR / "settings.json"
 DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
 DEEPSEEK_ONLY_DEFAULT_MODEL = DEFAULT_MODEL
+PACKAGE_NAME = "vertex-deepseek"
 MANAGED_VERTEX_CLI_ENV_BASE = {
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:{port}",
     "ANTHROPIC_AUTH_TOKEN": "freecc",
@@ -311,23 +312,113 @@ def _node_bin() -> str | None:
     return None
 
 
+def _installed_vertex_version() -> str:
+    """Return the installed Python package version used by the proxy."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version(PACKAGE_NAME)
+    except PackageNotFoundError:
+        source_pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+        if source_pyproject.is_file():
+            for line in source_pyproject.read_text(encoding="utf-8").splitlines():
+                if line.startswith("version = "):
+                    return line.split('"', 2)[1]
+        return "unknown"
+
+
+def _read_proxy_health(port: str) -> dict[str, Any] | None:
+    """Return local proxy health JSON, or None when no compatible server responds."""
+    import json
+    import urllib.request
+
+    health_url = f"http://127.0.0.1:{port}/health"
+    try:
+        with urllib.request.urlopen(health_url, timeout=1) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _terminate_vertex_proxy_processes() -> int:
+    """Terminate stale background ``python -m vertex_proxy`` processes."""
+    import subprocess
+
+    if os.name == "nt":
+        return 0
+
+    try:
+        output = subprocess.check_output(
+            ["ps", "-eo", "pid=,args="],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        return 0
+
+    current_pid = os.getpid()
+    killed = 0
+    for line in output.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        try:
+            pid_text, args = stripped.split(maxsplit=1)
+            pid = int(pid_text)
+        except ValueError:
+            continue
+        if pid == current_pid:
+            continue
+        if "vertex_proxy" not in args:
+            continue
+        try:
+            os.kill(pid, 15)
+            killed += 1
+        except OSError:
+            continue
+    return killed
+
+
+def _wait_for_proxy_health(
+    port: str, *, expected_version: str, attempts: int = 15
+) -> bool:
+    import time
+
+    for _ in range(attempts):
+        time.sleep(1)
+        health = _read_proxy_health(port)
+        if health and health.get("version") == expected_version:
+            return True
+    return False
+
+
+def _wait_for_proxy_down(port: str, *, attempts: int = 10) -> bool:
+    import time
+
+    for _ in range(attempts):
+        time.sleep(0.5)
+        if _read_proxy_health(port) is None:
+            return True
+    return False
+
+
 def _start_proxy() -> bool:
     """Start the Vertex proxy in background. Returns True if ready."""
     import subprocess
-    import time
-    import urllib.request
 
-    # Determine port from settings or env
     port = os.environ.get("VERTEX_PORT", "8083")
-    health_url = f"http://127.0.0.1:{port}/health"
+    expected_version = _installed_vertex_version()
+    health = _read_proxy_health(port)
+    if health is not None:
+        if health.get("version") == expected_version:
+            return True
+        print("Restarting Vertex proxy...")
+        if _terminate_vertex_proxy_processes():
+            _wait_for_proxy_down(port)
+    else:
+        print("Starting Vertex proxy...")
 
-    try:
-        urllib.request.urlopen(health_url, timeout=1)
-        return True  # Already running
-    except Exception:
-        pass
-
-    print("Starting Vertex proxy...")
     subprocess.Popen(
         [
             sys.executable,
@@ -338,13 +429,8 @@ def _start_proxy() -> bool:
         stderr=subprocess.DEVNULL,
     )
 
-    for _ in range(15):
-        time.sleep(1)
-        try:
-            urllib.request.urlopen(health_url, timeout=1)
-            return True
-        except Exception:
-            continue
+    if _wait_for_proxy_health(port, expected_version=expected_version):
+        return True
 
     print(f"Warning: Proxy may not have started on port {port}.")
     return False

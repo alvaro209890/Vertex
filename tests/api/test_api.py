@@ -45,6 +45,7 @@ def test_health(client: TestClient):
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"
+    assert response.json()["version"]
 
 
 def test_models_list(client: TestClient):
