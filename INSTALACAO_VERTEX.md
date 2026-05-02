@@ -2,6 +2,12 @@
 
 Guia rapido para instalar, reinstalar e executar o Vertex em Linux ou WSL.
 
+Versao atual esperada:
+
+```text
+1.1.3 (Vertex)
+```
+
 ## Antes de Comecar
 
 - No Windows, rode tudo dentro do WSL. Primeiro abra o `cmd` ou PowerShell e entre com:
@@ -33,6 +39,7 @@ hash -r
 vertex auth login
 vertex auth status
 vertex
+vertex --version
 ```
 
 ### Fedora
@@ -49,6 +56,7 @@ hash -r
 vertex auth login
 vertex auth status
 vertex
+vertex --version
 ```
 
 ### Arch Linux e Manjaro
@@ -65,6 +73,25 @@ hash -r
 vertex auth login
 vertex auth status
 vertex
+vertex --version
+```
+
+## Atualizar Instalacao Pipx Existente
+
+Use este caminho em outros PCs onde o Vertex foi instalado com `pipx`.
+
+```bash
+pipx install --force "git+https://github.com/alvaro209890/Vertex.git"
+hash -r
+vertex --version
+vertex auth status
+```
+
+Se precisar trocar ou gravar novamente a chave DeepSeek:
+
+```bash
+vertex auth login
+vertex auth status
 ```
 
 ## Atualizar Checkout Existente
@@ -75,6 +102,7 @@ Use este caminho em um PC onde voce ja trabalha com o repositorio clonado.
 cd /path/to/Vertex
 git pull origin main
 uv sync
+uv run vertex --version
 uv run vertex auth login
 uv run vertex auth status
 uv run vertex
@@ -142,6 +170,12 @@ O Vertex vem configurado por padrao para:
 ```text
 deepseek/deepseek-v4-flash
 ```
+
+## Aparencia da CLI
+
+Os estados visiveis da CLI enquanto o Vertex esta respondendo, pensando,
+editando ou mostrando bolhas de fala usam texto verde. Isso evita os tons
+amarelos ou laranja claros que eram usados por partes da CLI vendorizada.
 
 ## Diagnostico Rapido
 

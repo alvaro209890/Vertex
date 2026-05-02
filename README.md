@@ -8,9 +8,12 @@ local DeepSeek proxy.
 ```bash
 pipx install --force git+https://github.com/alvaro209890/Vertex.git
 vertex         # first run prompts for your DeepSeek API key
+vertex --version
 ```
 
 </div>
+
+Current bundled Vertex CLI version: `1.1.3`.
 
 ## What You Get
 
@@ -22,6 +25,7 @@ vertex         # first run prompts for your DeepSeek API key
 - DeepSeek-native backend with Anthropic-compatible Messages API
 - Per-model routing: Opus/Sonnet/Haiku → v4-flash by default
 - Streaming, tool use, reasoning/thinking block handling
+- Green CLI status text for responding, thinking, editing, and speech-bubble states
 - Change API key anytime: `vertex --logout`
 
 ## Quick Start
@@ -91,6 +95,7 @@ If Vertex was installed with `pipx`:
 
 ```bash
 pipx install --force git+https://github.com/alvaro209890/Vertex.git
+vertex --version
 vertex auth login
 vertex auth status
 ```
@@ -101,6 +106,7 @@ If Vertex was cloned from GitHub:
 cd /path/to/Vertex
 git pull origin main
 uv sync
+uv run vertex --version
 uv run vertex auth login
 uv run vertex auth status
 ```
@@ -108,6 +114,8 @@ uv run vertex auth status
 `vertex auth login` stores the DeepSeek API key in the local machine config.
 Do not commit API keys to git. After updating, Vertex ignores non-DeepSeek
 `MODEL*` values and routes chat through DeepSeek only.
+
+The expected version after this update is `1.1.3 (Vertex)`.
 
 ## DeepSeek Only
 
