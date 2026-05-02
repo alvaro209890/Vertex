@@ -1,4 +1,4 @@
-"""First-run setup wizard for provider API keys and model routing."""
+"""Assistente de primeiro uso para chave DeepSeek e roteamento de modelo."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ BOLD = "\033[1m"
 
 @dataclass(frozen=True, slots=True)
 class ProviderSetupOption:
-    """Interactive setup option for a remotely hosted provider."""
+    """Opcao interativa de configuracao para um provedor remoto."""
 
     provider_id: str
     display_name: str
@@ -36,37 +36,39 @@ INVALID_API_KEY_COMMAND_VALUES = {"/login", "/logout", "--login", "--logout"}
 
 
 def _banner() -> None:
-    """Print the branded Vertex setup banner."""
+    """Imprimir o banner de configuracao do Vertex."""
     print()
     print(f"{GREEN}{'=' * 54}{RESET}")
-    print(f"{GREEN}  Welcome to Vertex — DeepSeek CLI and local proxy{RESET}")
+    print(f"{GREEN}  Bem-vindo ao Vertex — CLI DeepSeek e proxy local{RESET}")
     print(f"{GREEN}{'=' * 54}{RESET}")
     print()
-    print("Vertex uses DeepSeek for all chat requests.")
+    print("O Vertex usa DeepSeek para todas as conversas.")
     print()
 
 
 def prompt_provider_option() -> ProviderSetupOption:
-    """Prompt user for a provider setup option."""
+    """Retornar a opcao de provedor usada pelo assistente."""
     return DEFAULT_SETUP_OPTION
 
 
 def prompt_provider_api_key(option: ProviderSetupOption) -> str:
-    """Prompt user interactively for the selected provider API key."""
-    print(f"Get a {option.display_name} key at: {option.key_url}")
+    """Pedir interativamente a chave de API do provedor selecionado."""
+    print(f"Crie uma chave {option.display_name} em: {option.key_url}")
     while True:
-        key = input(f"{BOLD}{option.display_name} API key:{RESET} ").strip()
+        key = input(f"{BOLD}Chave de API {option.display_name}:{RESET} ").strip()
         if not key:
-            print("  Key cannot be empty. Try again.")
+            print("  A chave nao pode ficar vazia. Tente novamente.")
             continue
         if key.lower() in INVALID_API_KEY_COMMAND_VALUES:
-            print("  That is a Vertex command, not a DeepSeek API key. Try again.")
+            print(
+                "  Isso e um comando do Vertex, nao uma chave DeepSeek. Tente novamente."
+            )
             continue
         return key
 
 
 def prompt_deepseek_api_key() -> str:
-    """Prompt user interactively for a DeepSeek API key."""
+    """Pedir interativamente uma chave de API DeepSeek."""
     deepseek = next(
         option for option in PROVIDER_SETUP_OPTIONS if option.provider_id == "deepseek"
     )
@@ -74,7 +76,7 @@ def prompt_deepseek_api_key() -> str:
 
 
 def _write_env_updates(env_path: Path, updates: dict[str, str]) -> None:
-    """Write or update a small set of dotenv assignments."""
+    """Gravar ou atualizar um pequeno conjunto de variaveis dotenv."""
     env_path.parent.mkdir(parents=True, exist_ok=True)
     desired = {key: f'{key}="{value}"' for key, value in updates.items()}
 
@@ -107,7 +109,7 @@ def save_provider_config_to_env(
     option: ProviderSetupOption,
     api_key: str,
 ) -> None:
-    """Write or update the provider credential and model routing in the env file."""
+    """Gravar ou atualizar a credencial e o roteamento de modelo no env."""
     updates = {
         option.credential_env: api_key,
         "MODEL": option.default_model,
@@ -120,7 +122,7 @@ def save_provider_config_to_env(
 
 
 def save_key_to_env(env_path: Path, api_key: str) -> None:
-    """Write or update DEEPSEEK_API_KEY in the env file."""
+    """Gravar ou atualizar DEEPSEEK_API_KEY no env."""
     deepseek = next(
         option for option in PROVIDER_SETUP_OPTIONS if option.provider_id == "deepseek"
     )
@@ -128,14 +130,14 @@ def save_key_to_env(env_path: Path, api_key: str) -> None:
 
 
 def run_setup_wizard(env_path: Path) -> str:
-    """Run the interactive setup wizard. Returns the API key."""
+    """Executar o assistente interativo. Retorna a chave de API."""
     _banner()
     option = prompt_provider_option()
     api_key = prompt_provider_api_key(option)
     save_provider_config_to_env(env_path, option, api_key)
-    print(f"\n{GREEN}✓ Key saved to {env_path}{RESET}")
-    print(f"  Provider: {option.display_name}")
-    print(f"  Model: {option.default_model}")
-    print(f"  Run {GREEN}vertex --logout{RESET} to change it later.")
+    print(f"\n{GREEN}✓ Chave salva em {env_path}{RESET}")
+    print(f"  Provedor: {option.display_name}")
+    print(f"  Modelo: {option.default_model}")
+    print(f"  Rode {GREEN}vertex /logout{RESET} para trocar a chave depois.")
     print()
     return api_key

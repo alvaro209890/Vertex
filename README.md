@@ -33,7 +33,7 @@ Current bundled Vertex CLI version: `1.1.4`.
 - Green CLI status text for responding, thinking, editing, and speech-bubble states
 - Brazilian Portuguese text for the main work/status messages and core `/`
   commands in the bundled CLI
-- Change API key anytime: `vertex --logout`
+- Change API key anytime: `vertex /logout`
 
 ## Quick Start
 

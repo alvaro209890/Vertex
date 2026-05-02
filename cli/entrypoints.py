@@ -161,9 +161,9 @@ def _handle_api_key_setup_request(*, restart_message: bool) -> bool:
 
     run_setup_wizard(ENV_FILE)
     if restart_message:
-        print("Provider API key updated. Restart Vertex to apply changes.")
+        print("Chave de API atualizada. Reinicie o Vertex para aplicar.")
     else:
-        print("Provider API key updated.")
+        print("Chave de API atualizada.")
     return True
 
 
@@ -171,8 +171,10 @@ def _handle_disabled_anthropic_token_setup() -> bool:
     """Block Anthropic OAuth token setup from the Vertex entrypoint."""
     if not _is_anthropic_token_setup_request():
         return False
-    print("Anthropic account login is disabled in Vertex.")
-    print("Use `vertex /logout` or `vertex auth login` to set a provider API key.")
+    print("Login de conta Anthropic esta desativado no Vertex.")
+    print(
+        "Use `vertex /logout` ou `vertex auth login` para configurar a chave DeepSeek."
+    )
     return True
 
 
@@ -203,12 +205,12 @@ def _handle_api_key_status_request() -> bool:
         )
     elif configured:
         if credential_env is None:
-            print(f"{provider_id} provider: no API key required")
+            print(f"Provedor {provider_id}: nenhuma chave de API necessaria")
         else:
-            print(f"{credential_env}: configured")
+            print(f"{credential_env}: configurada")
     else:
-        print(f"{credential_env}: not configured")
-        print("Run `vertex auth login` to set a provider API key.")
+        print(f"{credential_env}: nao configurada")
+        print("Rode `vertex auth login` para configurar a chave DeepSeek.")
     return True
 
 
@@ -438,20 +440,22 @@ def serve() -> None:
 def init() -> None:
     """Scaffold config at ~/.config/vertex/.env (registered as `vertex-init`)."""
     if ENV_FILE.exists():
-        print(f"Config already exists at {ENV_FILE}")
-        print("Delete it first if you want to reset to defaults.")
+        print(f"Configuracao ja existe em {ENV_FILE}")
+        print("Apague esse arquivo primeiro se quiser recriar do zero.")
         return
 
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     template = _load_env_template()
     ENV_FILE.write_text(template, encoding="utf-8")
-    print(f"Config created at {ENV_FILE}")
+    print(f"Configuracao criada em {ENV_FILE}")
 
     from cli.setup_wizard import run_setup_wizard
 
-    answer = input("Set a provider API key now? [Y/n]: ").strip().lower()
-    if answer in ("", "y", "yes"):
+    answer = input("Configurar uma chave DeepSeek agora? [S/n]: ").strip().lower()
+    if answer in ("", "s", "sim", "y", "yes"):
         run_setup_wizard(ENV_FILE)
-        print("\n✓ API key saved. Run: vertex")
+        print("\n✓ Chave de API salva. Rode: vertex")
     else:
-        print("\nEdit the file later to set provider API credentials, then run: vertex")
+        print(
+            "\nEdite o arquivo depois para configurar a chave DeepSeek. Depois rode: vertex"
+        )

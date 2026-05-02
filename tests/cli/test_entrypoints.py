@@ -79,7 +79,7 @@ def test_init_skips_if_env_already_exists(tmp_path: Path) -> None:
     output, _ = _run_init(tmp_path)
 
     assert env_file.read_text("utf-8") == "existing content"
-    assert "already exists" in output
+    assert "Configuracao ja existe" in output
 
 
 def test_init_prints_next_step_hint(tmp_path: Path) -> None:
@@ -281,7 +281,7 @@ def test_cli_logout_updates_deepseek_key_before_auto_wizard(tmp_path: Path) -> N
 
     run.assert_not_called()
     assert 'DEEPSEEK_API_KEY="sk-new-deepseek"' in env_file.read_text(encoding="utf-8")
-    assert "Provider API key updated." in "\n".join(printed)
+    assert "Chave de API atualizada." in "\n".join(printed)
 
 
 def test_cli_auth_login_maps_to_deepseek_key_setup(tmp_path: Path) -> None:
@@ -333,7 +333,7 @@ def test_cli_auth_status_reports_deepseek_key_status(tmp_path: Path) -> None:
         entrypoints.cli()
 
     run.assert_not_called()
-    assert "\n".join(printed) == "DEEPSEEK_API_KEY: configured"
+    assert "\n".join(printed) == "DEEPSEEK_API_KEY: configurada"
 
 
 def test_cli_auth_status_treats_logout_command_as_missing_key(tmp_path: Path) -> None:
@@ -364,8 +364,8 @@ def test_cli_auth_status_treats_logout_command_as_missing_key(tmp_path: Path) ->
 
     run.assert_not_called()
     output = "\n".join(printed)
-    assert "DEEPSEEK_API_KEY: not configured" in output
-    assert "Run `vertex auth login`" in output
+    assert "DEEPSEEK_API_KEY: nao configurada" in output
+    assert "Rode `vertex auth login`" in output
 
 
 def test_setup_wizard_rejects_vertex_commands_as_api_keys() -> None:
@@ -374,6 +374,29 @@ def test_setup_wizard_rejects_vertex_commands_as_api_keys() -> None:
 
     with patch("builtins.input", side_effect=["/logout", "sk-real-deepseek"]):
         assert prompt_provider_api_key(DEFAULT_SETUP_OPTION) == "sk-real-deepseek"
+
+
+def test_setup_wizard_api_key_screen_is_portuguese(tmp_path: Path, capsys) -> None:
+    """The first-run DeepSeek key prompt should be user-facing Portuguese."""
+    from cli.setup_wizard import run_setup_wizard
+
+    prompts: list[str] = []
+
+    def fake_input(prompt: str) -> str:
+        prompts.append(prompt)
+        return "sk-real-deepseek"
+
+    with patch("builtins.input", side_effect=fake_input):
+        run_setup_wizard(tmp_path / ".env")
+
+    output = capsys.readouterr().out
+    assert "Bem-vindo ao Vertex" in output
+    assert "O Vertex usa DeepSeek para todas as conversas." in output
+    assert "Crie uma chave DeepSeek em:" in output
+    assert "Chave salva em" in output
+    assert "Rode " in output
+    assert "vertex /logout" in output
+    assert prompts == ["\x1b[1mChave de API DeepSeek:\x1b[0m "]
 
 
 def test_cli_blocks_anthropic_setup_token() -> None:
@@ -394,4 +417,4 @@ def test_cli_blocks_anthropic_setup_token() -> None:
         entrypoints.cli()
 
     run.assert_not_called()
-    assert "Anthropic account login is disabled in Vertex." in "\n".join(printed)
+    assert "Login de conta Anthropic esta desativado no Vertex." in "\n".join(printed)
