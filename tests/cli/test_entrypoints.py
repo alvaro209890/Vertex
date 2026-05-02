@@ -136,6 +136,38 @@ def test_cli_launches_vendored_vertex_runtime(tmp_path: Path) -> None:
     exit_.assert_called_once_with(7)
 
 
+def test_cli_version_does_not_print_launching_banner(tmp_path: Path) -> None:
+    """`vertex --version` should only show the vendored CLI version output."""
+    import sys
+
+    from cli import entrypoints
+
+    vertex_bin = tmp_path / "vertex"
+    vertex_bin.write_text("#!/usr/bin/env node\n", encoding="utf-8")
+    node_bin = tmp_path / "node"
+    node_bin.write_text("", encoding="utf-8")
+    printed: list[str] = []
+
+    with (
+        patch.object(entrypoints, "_run_wizard_if_needed"),
+        patch.object(entrypoints, "_start_proxy", return_value=True),
+        patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
+        patch.dict(os.environ, {"VERTEX_CLI_BIN": str(vertex_bin)}, clear=False),
+        patch.object(sys, "argv", ["vertex", "--version"]),
+        patch(
+            "builtins.print",
+            side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
+        ),
+        patch("subprocess.run") as run,
+        patch("sys.exit", side_effect=SystemExit),
+    ):
+        run.return_value.returncode = 0
+        with suppress(SystemExit):
+            entrypoints.cli()
+
+    assert "Launching Vertex CLI..." not in printed
+
+
 def test_cli_creates_default_vertex_settings(tmp_path: Path) -> None:
     """cli() creates ~/.vertex/settings.json defaults when missing."""
     import json

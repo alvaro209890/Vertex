@@ -142,6 +142,12 @@ def _is_api_key_status_request(argv: list[str] | None = None) -> bool:
     return tuple(lowered[:2]) == ("auth", "status")
 
 
+def _is_version_request(argv: list[str] | None = None) -> bool:
+    """Return whether CLI args request only the vendored CLI version."""
+    args = list(sys.argv[1:] if argv is None else argv[1:])
+    return len(args) == 1 and args[0] in {"--version", "-v", "-V"}
+
+
 def _handle_api_key_setup_request(*, restart_message: bool) -> bool:
     """Handle login/logout aliases with provider API-key setup."""
     if not _is_api_key_setup_request():
@@ -385,7 +391,8 @@ def cli() -> None:
     env.update(_managed_vertex_cli_env(port))
 
     # Launch Vertex CLI
-    print("Launching Vertex CLI...")
+    if not _is_version_request():
+        print("Launching Vertex CLI...")
     try:
         proc = subprocess.run([node_bin, str(vertex_cli), *sys.argv[1:]], env=env)
         sys.exit(proc.returncode)
