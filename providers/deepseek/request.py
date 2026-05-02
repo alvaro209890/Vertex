@@ -82,6 +82,19 @@ def _validate_deepseek_native_request_dict(data: dict[str, Any]) -> None:
         _walk_block_list_for_unsupported(system, where="system")
 
 
+
+def _strip_additional_properties(schema: Any) -> Any:
+    if isinstance(schema, dict):
+        new_schema = {}
+        for k, v in schema.items():
+            if k == "additionalProperties":
+                continue
+            new_schema[k] = _strip_additional_properties(v)
+        return new_schema
+    if isinstance(schema, list):
+        return [_strip_additional_properties(v) for v in schema]
+    return schema
+
 def sanitize_deepseek_tools_for_native(tools: Any) -> Any:
     """Remove fields DeepSeek treats as server-tool discriminators on custom tools."""
     if not isinstance(tools, list):
@@ -94,6 +107,8 @@ def sanitize_deepseek_tools_for_native(tools: Any) -> Any:
             continue
         new_tool = dict(tool)
         new_tool.pop("type", None)
+        if "input_schema" in new_tool:
+            new_tool["input_schema"] = _strip_additional_properties(new_tool["input_schema"])
         sanitized.append(new_tool)
     return sanitized
 

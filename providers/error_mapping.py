@@ -47,7 +47,7 @@ def map_error(
         limiter.set_blocked(60)
         return RateLimitError(message, raw_error=str(e))
     if isinstance(e, openai.BadRequestError):
-        return InvalidRequestError(message, raw_error=str(e))
+        return InvalidRequestError(message, raw_error=f"{e} - Body: {e.response.text}")
     if isinstance(e, openai.InternalServerError):
         raw_message = str(e)
         if "overloaded" in raw_message.lower() or "capacity" in raw_message.lower():
@@ -72,7 +72,7 @@ def map_error(
             limiter.set_blocked(60)
             return RateLimitError(message, raw_error=str(e))
         if status == 400:
-            return InvalidRequestError(message, raw_error=str(e))
+            return InvalidRequestError(message, raw_error=f"{e} - Body: {e.response.text}")
         if status >= 500:
             if status in (502, 503, 504):
                 return OverloadedError(message, raw_error=str(e))
