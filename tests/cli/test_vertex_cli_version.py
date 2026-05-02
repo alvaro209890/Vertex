@@ -58,3 +58,18 @@ def test_vendored_vertex_cli_has_pt_br_work_status_text() -> None:
     assert '"Accomplishing"' not in cli_bundle
     assert '"Loading Vertex sessions…"' not in cli_bundle
     assert '"Tip: You can launch Vertex with just `vertex`"' not in cli_bundle
+
+
+def test_vendored_vertex_cli_identity_mentions_creator_and_deepseek() -> None:
+    repo = Path(__file__).resolve().parents[2]
+    cli_bundle = (repo / "vendor" / "vertex-cli" / "dist" / "cli.mjs").read_text(
+        encoding="utf-8"
+    )
+
+    assert "created by Alvaro Emanuel Alves Araujo" in cli_bundle
+    assert "You are not Anthropic" in cli_bundle
+    assert (
+        "Vertex runs DeepSeek models through a local Anthropic-compatible proxy"
+        in cli_bundle
+    )
+    assert "You are Claude Code, an AI assistant that orchestrates" not in cli_bundle

@@ -336,6 +336,46 @@ def test_cli_auth_status_reports_deepseek_key_status(tmp_path: Path) -> None:
     assert "\n".join(printed) == "DEEPSEEK_API_KEY: configured"
 
 
+def test_cli_auth_status_treats_logout_command_as_missing_key(tmp_path: Path) -> None:
+    """A stale command accidentally stored as the key must not count as configured."""
+    import sys
+
+    from cli import entrypoints
+
+    env_file = tmp_path / ".config" / "vertex" / ".env"
+    env_file.parent.mkdir(parents=True)
+    env_file.write_text(
+        'MODEL="deepseek/deepseek-v4-flash"\nDEEPSEEK_API_KEY="/logout"\n',
+        encoding="utf-8",
+    )
+    printed: list[str] = []
+
+    with (
+        patch.object(entrypoints, "ENV_FILE", env_file),
+        patch.object(sys, "argv", ["vertex", "auth", "status"]),
+        patch.dict(os.environ, {"VERTEX_ENV_FILE": str(env_file)}, clear=True),
+        patch(
+            "builtins.print",
+            side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
+        ),
+        patch("subprocess.run") as run,
+    ):
+        entrypoints.cli()
+
+    run.assert_not_called()
+    output = "\n".join(printed)
+    assert "DEEPSEEK_API_KEY: not configured" in output
+    assert "Run `vertex auth login`" in output
+
+
+def test_setup_wizard_rejects_vertex_commands_as_api_keys() -> None:
+    """Interactive setup should not save /logout or similar commands as API keys."""
+    from cli.setup_wizard import DEFAULT_SETUP_OPTION, prompt_provider_api_key
+
+    with patch("builtins.input", side_effect=["/logout", "sk-real-deepseek"]):
+        assert prompt_provider_api_key(DEFAULT_SETUP_OPTION) == "sk-real-deepseek"
+
+
 def test_cli_blocks_anthropic_setup_token() -> None:
     """The Anthropic token/OAuth setup command is not reachable through vertex."""
     import sys

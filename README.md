@@ -5,6 +5,10 @@
 Standalone Vertex CLI app with a bundled OpenClaude-derived tool runtime and a
 local DeepSeek proxy.
 
+Vertex was created by Alvaro Emanuel Alves Araujo. It is not an Anthropic
+product. The bundled assistant is instructed to identify as Vertex and to make
+clear that it runs DeepSeek models through the local proxy.
+
 ```bash
 pipx install --force git+https://github.com/alvaro209890/Vertex.git
 vertex         # first run prompts for your DeepSeek API key
@@ -23,6 +27,7 @@ Current bundled Vertex CLI version: `1.1.4`.
 - `vertex-proxy` is a proxy-only support command; normal users run `vertex`
 - Bundled agent/tool runtime derived from OpenClaude
 - DeepSeek-native backend with Anthropic-compatible Messages API
+- Assistant identity pinned to Vertex, created by Alvaro Emanuel Alves Araujo
 - Per-model routing: Opus/Sonnet/Haiku → v4-flash by default
 - Streaming, tool use, reasoning/thinking block handling
 - Green CLI status text for responding, thinking, editing, and speech-bubble states

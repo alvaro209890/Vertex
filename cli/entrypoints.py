@@ -25,11 +25,15 @@ API_AUTH_COMMANDS = {
     ("logout",),
 }
 API_AUTH_FLAGS = {"/login", "/logout", "--login", "--logout"}
+INVALID_API_KEY_COMMAND_VALUES = API_AUTH_FLAGS | {"login", "logout", "auth login"}
 
 
 def _env_value_is_set(value: str | None) -> bool:
     """Return whether a dotenv value contains non-whitespace text."""
-    return bool((value or "").strip())
+    stripped = (value or "").strip()
+    if not stripped:
+        return False
+    return stripped.lower() not in INVALID_API_KEY_COMMAND_VALUES
 
 
 def _load_env_template() -> str:

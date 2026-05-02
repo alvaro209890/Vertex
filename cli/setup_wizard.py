@@ -32,6 +32,7 @@ PROVIDER_SETUP_OPTIONS: tuple[ProviderSetupOption, ...] = (
     ),
 )
 DEFAULT_SETUP_OPTION = PROVIDER_SETUP_OPTIONS[0]
+INVALID_API_KEY_COMMAND_VALUES = {"/login", "/logout", "--login", "--logout"}
 
 
 def _banner() -> None:
@@ -57,6 +58,9 @@ def prompt_provider_api_key(option: ProviderSetupOption) -> str:
         key = input(f"{BOLD}{option.display_name} API key:{RESET} ").strip()
         if not key:
             print("  Key cannot be empty. Try again.")
+            continue
+        if key.lower() in INVALID_API_KEY_COMMAND_VALUES:
+            print("  That is a Vertex command, not a DeepSeek API key. Try again.")
             continue
         return key
 

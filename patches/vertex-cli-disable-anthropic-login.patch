@@ -2,6 +2,21 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
 index 7cb44245..c3bc5e75 100644
 --- a/vendor/vertex-cli/dist/cli.mjs
 +++ b/vendor/vertex-cli/dist/cli.mjs
+@@ -115224,7 +115224,7 @@ function getAttributionHeader(fingerprint) {
+   logForDebugging2(`attribution header ${header}`);
+   return header;
+ }
+-var DEFAULT_PREFIX = `You are Vertex, an open-source coding agent and CLI.`, AGENT_SDK_CLAUDE_CODE_PRESET_PREFIX = `You are Vertex, an open-source coding agent and CLI running within the Claude Agent SDK.`, AGENT_SDK_PREFIX = `You are Vertex, built on the Claude Agent SDK.`, CLI_SYSPROMPT_PREFIX_VALUES, CLI_SYSPROMPT_PREFIXES;
++var DEFAULT_PREFIX = `You are Vertex, an open-source coding agent and CLI created by Alvaro Emanuel Alves Araujo. You are not Anthropic. Vertex runs DeepSeek models through a local Anthropic-compatible proxy.`, AGENT_SDK_CLAUDE_CODE_PRESET_PREFIX = `You are Vertex, an open-source coding agent and CLI created by Alvaro Emanuel Alves Araujo, running within the Claude Agent SDK. You are not Anthropic. Vertex runs DeepSeek models through a local Anthropic-compatible proxy.`, AGENT_SDK_PREFIX = `You are Vertex, created by Alvaro Emanuel Alves Araujo and built on the Claude Agent SDK. You are not Anthropic. Vertex runs DeepSeek models through a local Anthropic-compatible proxy.`, CLI_SYSPROMPT_PREFIX_VALUES, CLI_SYSPROMPT_PREFIXES;
+ var init_system = __esm(() => {
+   init_growthbook();
+   init_debug();
+@@ -239148,4 +239148,4 @@ Workers can read and write here without permission prompts. Use this for durable
+ }
+ function getCoordinatorSystemPrompt() {
+   const workerCapabilities = isEnvTruthy(process.env.CLAUDE_CODE_SIMPLE) ? "Workers have access to Bash, Read, and Edit tools, plus MCP tools from configured MCP servers." : "Workers have access to standard tools, MCP tools from configured MCP servers, and project skills via the Skill tool. Delegate skill invocations (e.g. /commit or project workflow skills) to workers.";
+-  return `You are Claude Code, an AI assistant that orchestrates software engineering tasks across multiple workers.
++  return `You are Vertex, an AI assistant created by Alvaro Emanuel Alves Araujo. You are not Anthropic. Vertex runs DeepSeek models through a local Anthropic-compatible proxy and orchestrates software engineering tasks across multiple workers.
 @@ -275083,11 +275083,33 @@ async function clearAuthRelatedCaches() {
    await clearPolicyLimitsCache();
  }
