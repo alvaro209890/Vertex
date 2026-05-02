@@ -181,6 +181,8 @@ def build_request_body(request_data: Any, *, thinking_enabled: bool) -> dict:
     data = dump_raw_messages_request(request_data)
     _validate_deepseek_native_request_dict(data)
     data.pop("extra_body", None)
+    data.pop("context_management", None)
+    data.pop("output_config", None)
     if "tools" in data:
         data["tools"] = sanitize_deepseek_tools_for_native(data["tools"])
 

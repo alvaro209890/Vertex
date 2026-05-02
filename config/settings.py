@@ -15,7 +15,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from .constants import HTTP_CONNECT_TIMEOUT_DEFAULT
 
 DEEPSEEK_PROVIDER_ID = "deepseek"
-DEEPSEEK_DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
+DEEPSEEK_DEFAULT_MODEL = "deepseek/deepseek-chat"
 
 
 def _env_files() -> tuple[Path, ...]:
