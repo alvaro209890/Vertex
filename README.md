@@ -13,7 +13,7 @@ vertex --version
 
 </div>
 
-Current bundled Vertex CLI version: `1.1.3`.
+Current bundled Vertex CLI version: `1.1.4`.
 
 ## What You Get
 
@@ -26,6 +26,7 @@ Current bundled Vertex CLI version: `1.1.3`.
 - Per-model routing: Opus/Sonnet/Haiku → v4-flash by default
 - Streaming, tool use, reasoning/thinking block handling
 - Green CLI status text for responding, thinking, editing, and speech-bubble states
+- Brazilian Portuguese text for the main work/status messages in the bundled CLI
 - Change API key anytime: `vertex --logout`
 
 ## Quick Start
@@ -115,7 +116,7 @@ uv run vertex auth status
 Do not commit API keys to git. After updating, Vertex ignores non-DeepSeek
 `MODEL*` values and routes chat through DeepSeek only.
 
-The expected version after this update is `1.1.3 (Vertex)`.
+The expected version after this update is `1.1.4 (Vertex)`.
 
 ## DeepSeek Only
 

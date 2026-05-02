@@ -14,10 +14,12 @@ def test_vendored_vertex_cli_version_matches_python_package() -> None:
         (repo / "vendor" / "vertex-cli" / "package.json").read_text(encoding="utf-8")
     )
 
-    assert 'version = "1.1.3"' in pyproject
-    assert cli_package["version"] == "1.1.3"
-    assert 'version("1.1.3 (Vertex)"' in cli_bundle
-    assert 'console.log(`${"1.1.3"} (Vertex)`)' in cli_bundle
+    assert 'version = "1.1.4"' in pyproject
+    assert cli_package["version"] == "1.1.4"
+    assert 'version("1.1.4 (Vertex)"' in cli_bundle
+    assert 'console.log(`${"1.1.4"} (Vertex)`)' in cli_bundle
+    assert 'vertex ${RESET}${rgb(...ACCENT)}v${"1.1.4"}' in cli_bundle
+    assert 'vertex ${RESET}${rgb(...ACCENT)}v${"1.0.0"}' not in cli_bundle
 
 
 def test_vendored_vertex_cli_status_colors_are_green() -> None:
@@ -34,3 +36,25 @@ def test_vendored_vertex_cli_status_colors_are_green() -> None:
     assert 'claudeShimmer: "rgb(78,186,101)"' in cli_bundle
     assert 'color: "success",\n        fading,\n        tail: "right"' in cli_bundle
     assert 'color: "success",\n      fading: t4,\n      tail: "down"' in cli_bundle
+
+
+def test_vendored_vertex_cli_has_pt_br_work_status_text() -> None:
+    repo = Path(__file__).resolve().parents[2]
+    cli_bundle = (repo / "vendor" / "vertex-cli" / "dist" / "cli.mjs").read_text(
+        encoding="utf-8"
+    )
+
+    assert '"Pensando"' in cli_bundle
+    assert '"Respondendo"' in cli_bundle
+    assert "`pensando${effortSuffix}`" in cli_bundle
+    assert (
+        "`pensou por ${Math.max(1, Math.round(thinkingStatus / 1000))}s`" in cli_bundle
+    )
+    assert '"∴ Pensando"' in cli_bundle
+    assert '"✻ Pensando…"' in cli_bundle
+    assert '"Carregando sessoes do Vertex…"' in cli_bundle
+    assert '" Retomando conversa…"' in cli_bundle
+    assert '"Dica: voce pode iniciar o Vertex apenas com `vertex`"' in cli_bundle
+    assert '"Accomplishing"' not in cli_bundle
+    assert '"Loading Vertex sessions…"' not in cli_bundle
+    assert '"Tip: You can launch Vertex with just `vertex`"' not in cli_bundle

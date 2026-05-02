@@ -5,7 +5,7 @@ Guia rapido para instalar, reinstalar e executar o Vertex em Linux ou WSL.
 Versao atual esperada:
 
 ```text
-1.1.3 (Vertex)
+1.1.4 (Vertex)
 ```
 
 ## Antes de Comecar
