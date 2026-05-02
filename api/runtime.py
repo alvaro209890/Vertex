@@ -88,6 +88,35 @@ class AppRuntime:
         await self._start_messaging_if_configured()
         self._publish_state()
 
+        # Start Dashboard Server
+        import threading
+        import socket
+        import http.server
+        import socketserver
+        import os
+
+        def start_dashboard():
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.bind(('127.0.0.1', 0))
+                port = sock.getsockname()[1]
+                sock.close()
+                dashboard_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dashboard")
+                os.chdir(dashboard_dir)
+                Handler = http.server.SimpleHTTPRequestHandler
+                httpd = socketserver.TCPServer(("", port), Handler)
+                logger.info(f"Dashboard Monitoramento web: http://localhost:{port}")
+                print("\n====================================================")
+                print(f"  Vertex Dashboard running at: http://localhost:{port}")
+                print("====================================================\n")
+                httpd.serve_forever()
+            except Exception as e:
+                logger.error(f"Failed to start dashboard: {e}")
+
+        dashboard_thread = threading.Thread(target=start_dashboard, daemon=True)
+        dashboard_thread.start()
+
+
     async def shutdown(self) -> None:
         verbose = self.settings.log_api_error_tracebacks
         if self.message_handler is not None:

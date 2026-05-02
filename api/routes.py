@@ -165,3 +165,11 @@ async def stop_cli(request: Request, _auth=Depends(require_api_key)):
     count = await handler.stop_all_tasks()
     logger.info("STOP_CLI: source=handler cancelled_count={}", count)
     return {"status": "stopped", "cancelled_count": count}
+
+from api.metrics import metrics_store
+from fastapi.middleware.cors import CORSMiddleware
+
+@router.get("/api/metrics")
+async def get_metrics():
+    """Get request and token metrics."""
+    return metrics_store.get_metrics()

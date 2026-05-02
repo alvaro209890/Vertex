@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vertex Dashboard</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00e676;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .card {
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .metric-value {
+            font-size: 48px;
+            font-weight: bold;
+            color: #00e676;
+            margin: 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #333;
+        }
+        th {
+            color: #888;
+            font-weight: normal;
+        }
+        .status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: #00e676;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .error {
+            color: #ff5252;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="status"></span>Vertex Monitor</h1>
+        
+        <div class="card">
+            <h2>Requests Per Minute</h2>
+            <div class="metric-value" id="rpm">0</div>
+            <p style="color: #888; margin: 0;">Live traffic in the last 60 seconds</p>
+        </div>
+
+        <div class="card">
+            <h2>Tokens Consumed by Session</h2>
+            <table id="tokens-table">
+                <thead>
+                    <tr>
+                        <th>Session ID</th>
+                        <th>Input Tokens Used</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated via JS -->
+                </tbody>
+            </table>
+        </div>
+        <div id="error-msg" class="error"></div>
+    </div>
+
+    <script>
+        // Fetch from the main API port. We will assume the API is at port 8083 unless configured otherwise.
+        // We'll try relative first, but if served on a separate port, we need the exact host:port.
+        const API_URL = "http://localhost:8083/api/metrics";
+
+        async function fetchMetrics() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                document.getElementById('rpm').innerText = data.requests_per_minute;
+                
+                const tableBody = document.querySelector('#tokens-table tbody');
+                tableBody.innerHTML = '';
+                
+                if (Object.keys(data.session_tokens).length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="2" style="color: #666; text-align: center;">No active sessions</td></tr>';
+                } else {
+                    for (const [sessionId, tokens] of Object.entries(data.session_tokens)) {
+                        const tr = document.createElement('tr');
+                        
+                        const tdId = document.createElement('td');
+                        tdId.innerText = sessionId;
+                        tdId.style.fontFamily = 'monospace';
+                        
+                        const tdTokens = document.createElement('td');
+                        tdTokens.innerText = tokens.toLocaleString();
+                        
+                        tr.appendChild(tdId);
+                        tr.appendChild(tdTokens);
+                        tableBody.appendChild(tr);
+                    }
+                }
+                document.getElementById('error-msg').innerText = '';
+            } catch (error) {
+                console.error("Error fetching metrics:", error);
+                document.getElementById('error-msg').innerText = "Unable to connect to Vertex API (http://localhost:8083).";
+            }
+        }
+
+        // Initial fetch
+        fetchMetrics();
+        
+        // Poll every 2 seconds
+        setInterval(fetchMetrics, 2000);
+    </script>
+</body>
+</html>
