@@ -346,6 +346,43 @@ def test_passthrough_tool_use_and_result(deepseek_provider):
     assert body["messages"][1]["content"][0]["type"] == "tool_result"
 
 
+def test_tool_result_dict_content_is_serialized_for_deepseek(deepseek_provider):
+    request = MessagesRequest.model_validate(
+        {
+            "model": "m",
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "t1",
+                            "name": "n",
+                            "input": {"a": 1},
+                        }
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": "t1",
+                            "content": {"stdout": "ok", "exit_code": 0},
+                        }
+                    ],
+                },
+            ],
+        }
+    )
+
+    body = deepseek_provider._build_request_body(request)
+
+    result = body["messages"][1]["content"][0]
+    assert result["type"] == "tool_result"
+    assert result["content"] == '{"exit_code": 0, "stdout": "ok"}'
+
+
 def test_preflight_rejects_user_image():
     request = MessagesRequest(
         model="m",

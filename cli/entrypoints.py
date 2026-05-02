@@ -425,6 +425,7 @@ def _start_proxy() -> bool:
             "-m",
             "vertex_proxy",
         ],
+        env={**os.environ, "PORT": port},
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )

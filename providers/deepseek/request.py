@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from typing import Any
 
@@ -145,7 +146,7 @@ def sanitize_deepseek_tools_for_native(tools: Any) -> Any:
 def sanitize_deepseek_messages_for_native(
     messages: Any, *, thinking_enabled: bool
 ) -> Any:
-    """Filter assistant content for DeepSeek: unsigned ``thinking`` is allowed; no ``redacted_thinking``."""
+    """Filter message content for DeepSeek native Anthropic compatibility."""
     if not isinstance(messages, list):
         return messages
 
@@ -154,6 +155,7 @@ def sanitize_deepseek_messages_for_native(
         if not isinstance(message, dict):
             sanitized.append(message)
             continue
+        message = _sanitize_deepseek_tool_result_message(message)
         if message.get("role") != "assistant":
             sanitized.append(message)
             continue
@@ -183,6 +185,37 @@ def sanitize_deepseek_messages_for_native(
         new_msg["content"] = filtered or ""
         sanitized.append(new_msg)
     return sanitized
+
+
+def _sanitize_deepseek_tool_result_message(message: dict[str, Any]) -> dict[str, Any]:
+    content = message.get("content")
+    if not isinstance(content, list):
+        return message
+
+    sanitized_content: list[Any] = []
+    changed = False
+    for block in content:
+        if not isinstance(block, dict) or block.get("type") != "tool_result":
+            sanitized_content.append(block)
+            continue
+        block_content = block.get("content")
+        if not isinstance(block_content, dict):
+            sanitized_content.append(block)
+            continue
+        new_block = dict(block)
+        new_block["content"] = json.dumps(
+            block_content,
+            ensure_ascii=True,
+            sort_keys=True,
+        )
+        sanitized_content.append(new_block)
+        changed = True
+
+    if not changed:
+        return message
+    new_message = dict(message)
+    new_message["content"] = sanitized_content
+    return new_message
 
 
 def _strip_reasoning_content_when_native(messages: Any) -> Any:

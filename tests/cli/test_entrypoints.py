@@ -305,6 +305,7 @@ def test_start_proxy_restarts_stale_running_proxy() -> None:
     terminate.assert_called_once()
     wait_down.assert_called_once_with("8083")
     popen.assert_called_once()
+    assert popen.call_args.kwargs["env"]["PORT"] == "8083"
 
 
 def test_cli_logout_updates_deepseek_key_before_auto_wizard(tmp_path: Path) -> None:
