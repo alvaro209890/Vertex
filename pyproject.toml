@@ -58,7 +58,7 @@ voice_local = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["api", "cli", "config", "core", "messaging", "providers"]
+packages = ["api", "cli", "config", "core", "messaging", "providers", "vertex_auth"]
 
 [tool.hatch.build.targets.wheel.force-include]
 ".env.example" = "cli/env.example"
