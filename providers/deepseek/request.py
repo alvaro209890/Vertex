@@ -192,29 +192,47 @@ def _sanitize_deepseek_tool_result_message(message: dict[str, Any]) -> dict[str,
     if not isinstance(content, list):
         return message
 
-    sanitized_content: list[Any] = []
+    tool_results: list[Any] = []
+    other_blocks: list[Any] = []
     changed = False
     for block in content:
         if not isinstance(block, dict) or block.get("type") != "tool_result":
-            sanitized_content.append(block)
+            other_blocks.append(block)
             continue
         block_content = block.get("content")
-        if not isinstance(block_content, dict):
-            sanitized_content.append(block)
+        if isinstance(block_content, dict):
+            new_block = dict(block)
+            new_block["content"] = json.dumps(
+                block_content,
+                ensure_ascii=True,
+                sort_keys=True,
+            )
+            tool_results.append(new_block)
+            changed = True
             continue
-        new_block = dict(block)
-        new_block["content"] = json.dumps(
-            block_content,
-            ensure_ascii=True,
-            sort_keys=True,
-        )
-        sanitized_content.append(new_block)
+
+        if isinstance(block_content, list) and any(
+            not isinstance(item, dict) for item in block_content
+        ):
+            new_block = dict(block)
+            new_block["content"] = json.dumps(
+                block_content,
+                ensure_ascii=True,
+            )
+            tool_results.append(new_block)
+            changed = True
+            continue
+
+        tool_results.append(block)
+
+    if tool_results and content[: len(tool_results)] != tool_results:
         changed = True
 
     if not changed:
         return message
+
     new_message = dict(message)
-    new_message["content"] = sanitized_content
+    new_message["content"] = [*tool_results, *other_blocks]
     return new_message
 
 

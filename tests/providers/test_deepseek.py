@@ -383,6 +383,59 @@ def test_tool_result_dict_content_is_serialized_for_deepseek(deepseek_provider):
     assert result["content"] == '{"exit_code": 0, "stdout": "ok"}'
 
 
+def test_tool_result_blocks_are_moved_before_text_for_deepseek(deepseek_provider):
+    request = MessagesRequest.model_validate(
+        {
+            "model": "m",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "."},
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": "t1",
+                            "content": "ok",
+                        },
+                    ],
+                }
+            ],
+        }
+    )
+
+    body = deepseek_provider._build_request_body(request)
+
+    blocks = body["messages"][0]["content"]
+    assert blocks[0]["type"] == "tool_result"
+    assert blocks[1]["type"] == "text"
+
+
+def test_tool_result_list_of_strings_is_serialized_for_deepseek(deepseek_provider):
+    request = MessagesRequest.model_validate(
+        {
+            "model": "m",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": "t1",
+                            "content": ["ok", "done"],
+                        }
+                    ],
+                }
+            ],
+        }
+    )
+
+    body = deepseek_provider._build_request_body(request)
+
+    result = body["messages"][0]["content"][0]
+    assert result["type"] == "tool_result"
+    assert result["content"] == '["ok", "done"]'
+
+
 def test_preflight_rejects_user_image():
     request = MessagesRequest(
         model="m",
