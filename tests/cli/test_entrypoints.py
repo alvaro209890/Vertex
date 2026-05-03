@@ -365,7 +365,6 @@ def test_cli_auth_login_runs_setup_wizard(tmp_path: Path) -> None:
     import sys
 
     from cli import entrypoints
-    from cli.setup_wizard import run_login_wizard
 
     printed: list[str] = []
 
@@ -478,9 +477,9 @@ def test_cli_blocks_anthropic_setup_token() -> None:
         patch.object(entrypoints, "_ensure_vertex_cli_settings"),
         patch("subprocess.run") as run,
         patch("sys.exit", side_effect=SystemExit),
+        suppress(SystemExit),
     ):
-        with suppress(SystemExit):
-            entrypoints.cli()
+        entrypoints.cli()
 
     run.assert_called_once()
     args = run.call_args.args[0]
