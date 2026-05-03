@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
-from vertex_auth import clear_auth, load_auth, save_auth, sign_in_with_email
+from vertex_auth import save_auth, sign_in_with_email
 
 GREEN = "\033[92m"
 RED = "\033[91m"
