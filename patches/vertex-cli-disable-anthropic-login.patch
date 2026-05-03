@@ -1,4 +1,6 @@
 diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
+--- a/vendor/vertex-cli/dist/cli.mjs	2026-05-03 11:32:30.582878003 -0300
++++ "/media/server/HD Backup/Servidores_NAO_MEXA/vertex/vendor/vertex-cli/dist/cli.mjs"	2026-05-03 11:27:46.608924200 -0300
 @@ -114033,6 +114033,10 @@
    const settings = getSettings_DEPRECATED() || {};
    const modelSetting = settings.model || process.env.ANTHROPIC_MODEL || process.env.CLAUDE_MODEL || "claude-sonnet-4-6";
@@ -15,7 +17,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
    out.push(boxRow(sRow, W2, sLen));
    out.push(`${rgb(...BORDER)}╚${"═".repeat(W2 - 2)}╝${RESET}`);
 -  out.push(`  ${DIM}${rgb(...DIMCOL)}vertex ${RESET}${rgb(...ACCENT)}v${"1.0.0"}${RESET}`);
-+  out.push(`  ${DIM}${rgb(...DIMCOL)}vertex ${RESET}${rgb(...ACCENT)}v${"1.2.1"}${RESET}`);
++  out.push(`  ${DIM}${rgb(...DIMCOL)}vertex ${RESET}${rgb(...ACCENT)}v${"1.2.2"}${RESET}`);
    out.push("");
    process.stdout.write(out.join(`
  `) + `
@@ -2547,7 +2549,73 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
        fading: t4,
        tail: "down"
      }, undefined, false, undefined, this);
-@@ -530297,7 +530171,7 @@
+@@ -527936,6 +527810,7 @@
+     columns,
+     rows
+   } = useTerminalSize();
++  const dashboardUrl = typeof process !== "undefined" && process.env?.VERTEX_DASHBOARD_URL || "";
+   const messagesRef = import_react252.useRef(messages);
+   messagesRef.current = messages;
+   const lastAssistantMessageId = import_react252.useMemo(() => getLastAssistantMessageId(messages), [messages]);
+@@ -528026,9 +527901,10 @@
+                 isNarrow
+               }, undefined, false, undefined, this),
+               false,
+-              /* @__PURE__ */ jsx_dev_runtime428.jsxDEV(BridgeStatusIndicator, {
+-                bridgeSelected
+-              }, undefined, false, undefined, this)
++              dashboardUrl ? /* @__PURE__ */ jsx_dev_runtime428.jsxDEV(Link, {
++                url: dashboardUrl,
++                children: "Painel"
++              }, undefined, false, undefined, this) : null
+             ]
+           }, undefined, true, undefined, this)
+         ]
+@@ -528037,42 +527913,9 @@
+     ]
+   }, undefined, true, undefined, this);
+ }
+-function BridgeStatusIndicator({
+-  bridgeSelected
+-}) {
+-  if (true)
+-    return null;
+-  const enabled = useAppState((s) => s.replBridgeEnabled);
+-  const connected = useAppState((s_0) => s_0.replBridgeConnected);
+-  const sessionActive = useAppState((s_1) => s_1.replBridgeSessionActive);
+-  const reconnecting = useAppState((s_2) => s_2.replBridgeReconnecting);
+-  const explicit = useAppState((s_3) => s_3.replBridgeExplicit);
+-  if (!isBridgeEnabled() || !enabled)
+-    return null;
+-  const status2 = getBridgeStatus({
+-    error: undefined,
+-    connected,
+-    sessionActive,
+-    reconnecting
+-  });
+-  if (!explicit && status2.label !== "Remote Control reconnecting") {
+-    return null;
+-  }
+-  return /* @__PURE__ */ jsx_dev_runtime428.jsxDEV(ThemedText, {
+-    color: bridgeSelected ? "background" : status2.color,
+-    inverse: bridgeSelected,
+-    wrap: "truncate",
+-    children: [
+-      status2.label,
+-      bridgeSelected && /* @__PURE__ */ jsx_dev_runtime428.jsxDEV(ThemedText, {
+-        dimColor: true,
+-        children: " · Enter to view"
+-      }, undefined, false, undefined, this)
+-    ]
+-  }, undefined, true, undefined, this);
+-}
+ var import_react252, jsx_dev_runtime428, PromptInputFooter_default;
+ var init_PromptInputFooter = __esm(() => {
++  init_Link();
+   init_bridgeEnabled();
+   init_bridgeStatusUtil();
+   init_promptOverlayContext();
+@@ -530297,7 +530140,7 @@
          marginLeft: 2,
          children: /* @__PURE__ */ jsx_dev_runtime432.jsxDEV(ThemedText, {
            dimColor: true,
@@ -2556,7 +2624,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
          }, undefined, false, undefined, this)
        }, undefined, false, undefined, this),
        /* @__PURE__ */ jsx_dev_runtime432.jsxDEV(PromptInputStashNotice, {
-@@ -539822,7 +539696,7 @@
+@@ -539822,7 +539665,7 @@
      },
      {
        id: "prompt-queue",
@@ -2565,7 +2633,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
        cooldownSessions: 5,
        async isRelevant() {
          const config3 = getGlobalConfig();
-@@ -547978,7 +547852,7 @@
+@@ -547978,7 +547821,7 @@
        const idleTimeSinceResponse = Date.now() - lastQueryCompletionTime2;
        if (!isLoading2 && !toolJSX2 && focusedInputDialogRef2.current === undefined && idleTimeSinceResponse >= getGlobalConfig().messageIdleNotifThresholdMs) {
          sendNotification({
@@ -2574,7 +2642,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
            notificationType: "idle_prompt"
          }, terminal2);
        }
-@@ -550400,7 +550274,7 @@
+@@ -550400,7 +550243,7 @@
      if ($2[0] !== theme2) {
        t02 = /* @__PURE__ */ jsx_dev_runtime471.jsxDEV(AppleTerminalWelcomeV2, {
          theme: theme2,
@@ -2583,7 +2651,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
        }, undefined, false, undefined, this);
        $2[0] = theme2;
        $2[1] = t02;
-@@ -553118,13 +552992,13 @@
+@@ -553118,13 +552961,13 @@
              /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(Spinner, {}, undefined, false, undefined, this),
              /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(ThemedText, {
                bold: true,
@@ -2599,7 +2667,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
          }, undefined, false, undefined, this)
        ]
      }, undefined, true, undefined, this);
-@@ -553137,24 +553011,24 @@
+@@ -553137,24 +552980,24 @@
          /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(ThemedText, {
            bold: true,
            color: "error",
@@ -2628,7 +2696,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
            ]
          }, undefined, true, undefined, this)
        ]
-@@ -553168,10 +553042,10 @@
+@@ -553168,10 +553011,10 @@
          /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(ThemedText, {
            bold: true,
            children: [
@@ -2641,7 +2709,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
                  currentRepo
                ]
              }, undefined, true, undefined, this)
-@@ -553182,12 +553056,12 @@
+@@ -553182,12 +553025,12 @@
            children: /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(ThemedText, {
              dimColor: true,
              children: [
@@ -2656,7 +2724,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
              ]
            }, undefined, true, undefined, this)
          }, undefined, false, undefined, this)
-@@ -553222,14 +553096,14 @@
+@@ -553222,14 +553065,14 @@
        /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(ThemedText, {
          bold: true,
          children: [
@@ -2673,7 +2741,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
                sessions.length,
                ")"
              ]
-@@ -553257,7 +553131,7 @@
+@@ -553257,7 +553100,7 @@
                children: [
                  UPDATED_STRING.padEnd(maxTimeStringLength, " "),
                  SPACE_BETWEEN_TABLE_COLUMNS,
@@ -2682,7 +2750,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
                ]
              }, undefined, true, undefined, this)
            }, undefined, false, undefined, this),
-@@ -553287,17 +553161,17 @@
+@@ -553287,17 +553130,17 @@
              children: [
                /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(KeyboardShortcutHint, {
                  shortcut: "↑/↓",
@@ -2703,7 +2771,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
                }, undefined, false, undefined, this)
              ]
            }, undefined, true, undefined, this)
-@@ -553327,7 +553201,7 @@
+@@ -553327,7 +553170,7 @@
          flexDirection: "column",
          children: /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(ThemedText, {
            dimColor: true,
@@ -2712,7 +2780,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
          }, undefined, false, undefined, this)
        }, undefined, false, undefined, this);
      case "auth":
-@@ -553337,7 +553211,7 @@
+@@ -553337,7 +553180,7 @@
          children: [
            /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(ThemedText, {
              dimColor: true,
@@ -2721,7 +2789,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
            }, undefined, false, undefined, this),
            /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(ThemedText, {
              dimColor: true,
-@@ -553347,7 +553221,7 @@
+@@ -553347,7 +553190,7 @@
                  bold: true,
                  children: "/login"
                }, undefined, false, undefined, this),
@@ -2730,7 +2798,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
              ]
            }, undefined, true, undefined, this)
          ]
-@@ -553358,7 +553232,7 @@
+@@ -553358,7 +553201,7 @@
          flexDirection: "column",
          children: /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(ThemedText, {
            dimColor: true,
@@ -2739,7 +2807,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
          }, undefined, false, undefined, this)
        }, undefined, false, undefined, this);
      case "other":
-@@ -553367,12 +553241,12 @@
+@@ -553367,12 +553210,12 @@
          flexDirection: "row",
          children: /* @__PURE__ */ jsx_dev_runtime480.jsxDEV(ThemedText, {
            dimColor: true,
@@ -2754,7 +2822,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
  var init_ResumeTask = __esm(() => {
    init_useTerminalSize();
    init_api2();
-@@ -553487,7 +553361,7 @@
+@@ -553487,7 +553330,7 @@
            /* @__PURE__ */ jsx_dev_runtime481.jsxDEV(Spinner, {}, undefined, false, undefined, this),
            /* @__PURE__ */ jsx_dev_runtime481.jsxDEV(ThemedText, {
              bold: true,
@@ -2763,7 +2831,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
            }, undefined, false, undefined, this)
          ]
        }, undefined, true, undefined, this);
-@@ -553505,7 +553379,7 @@
+@@ -553505,7 +553348,7 @@
            /* @__PURE__ */ jsx_dev_runtime481.jsxDEV(ThemedText, {
              dimColor: true,
              children: [
@@ -2772,7 +2840,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
                selectedSession.title,
                '"…'
              ]
-@@ -553525,7 +553399,7 @@
+@@ -553525,7 +553368,7 @@
        t82 = /* @__PURE__ */ jsx_dev_runtime481.jsxDEV(ThemedText, {
          bold: true,
          color: "error",
@@ -2781,7 +2849,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
        }, undefined, false, undefined, this);
        $2[15] = t82;
      } else {
-@@ -553549,12 +553423,12 @@
+@@ -553549,12 +553392,12 @@
          children: /* @__PURE__ */ jsx_dev_runtime481.jsxDEV(ThemedText, {
            dimColor: true,
            children: [
@@ -2796,7 +2864,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
            ]
          }, undefined, true, undefined, this)
        }, undefined, false, undefined, this);
-@@ -553658,7 +553532,7 @@
+@@ -553658,7 +553501,7 @@
      let t32;
      if ($2[7] === Symbol.for("react.memo_cache_sentinel")) {
        t32 = {
@@ -2805,7 +2873,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
          value: "cancel"
        };
        $2[7] = t32;
-@@ -553700,7 +553574,7 @@
+@@ -553700,7 +553543,7 @@
            children: [
              /* @__PURE__ */ jsx_dev_runtime482.jsxDEV(Spinner, {}, undefined, false, undefined, this),
              /* @__PURE__ */ jsx_dev_runtime482.jsxDEV(ThemedText, {
@@ -2814,7 +2882,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
              }, undefined, false, undefined, this)
            ]
          }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime482.jsxDEV(Select, {
-@@ -553719,7 +553593,7 @@
+@@ -553719,7 +553562,7 @@
          /* @__PURE__ */ jsx_dev_runtime482.jsxDEV(ThemedText, {
            dimColor: true,
            children: [
@@ -2823,7 +2891,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
              targetRepo
            ]
          }, undefined, true, undefined, this)
-@@ -553738,7 +553612,7 @@
+@@ -553738,7 +553581,7 @@
    let t4;
    if ($2[15] !== onCancel || $2[16] !== t3) {
      t4 = /* @__PURE__ */ jsx_dev_runtime482.jsxDEV(Dialog, {
@@ -2832,7 +2900,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
        onCancel,
        color: "background",
        children: t3
-@@ -553755,7 +553629,7 @@
+@@ -553755,7 +553598,7 @@
    return {
      label: /* @__PURE__ */ jsx_dev_runtime482.jsxDEV(ThemedText, {
        children: [
@@ -2841,7 +2909,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
          /* @__PURE__ */ jsx_dev_runtime482.jsxDEV(ThemedText, {
            bold: true,
            children: getDisplayPath(path23)
-@@ -554036,7 +553910,7 @@
+@@ -554036,7 +553879,7 @@
        children: [
          /* @__PURE__ */ jsx_dev_runtime483.jsxDEV(Spinner, {}, undefined, false, undefined, this),
          /* @__PURE__ */ jsx_dev_runtime483.jsxDEV(ThemedText, {
@@ -2850,7 +2918,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
          }, undefined, false, undefined, this)
        ]
      }, undefined, true, undefined, this);
-@@ -554046,7 +553920,7 @@
+@@ -554046,7 +553889,7 @@
        children: [
          /* @__PURE__ */ jsx_dev_runtime483.jsxDEV(Spinner, {}, undefined, false, undefined, this),
          /* @__PURE__ */ jsx_dev_runtime483.jsxDEV(ThemedText, {
@@ -2859,7 +2927,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
          }, undefined, false, undefined, this)
        ]
      }, undefined, true, undefined, this);
-@@ -554057,14 +553931,14 @@
+@@ -554057,14 +553900,14 @@
      children: [
        /* @__PURE__ */ jsx_dev_runtime483.jsxDEV(ThemedText, {
          color: "red",
@@ -2876,7 +2944,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
        }, undefined, false, undefined, this)
      ]
    }, undefined, true, undefined, this) : null;
-@@ -554531,9 +554405,9 @@
+@@ -554531,9 +554374,9 @@
  function registerBatchSkill() {
    registerBundledSkill({
      name: "batch",
@@ -2889,7 +2957,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
      userInvocable: true,
      disableModelInvocation: true,
      async getPromptForCommand(args) {
-@@ -554572,8 +554446,8 @@
+@@ -554572,8 +554415,8 @@
  function registerClaudeInChromeSkill() {
    registerBundledSkill({
      name: "claude-in-chrome",
@@ -2900,7 +2968,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
      allowedTools: CLAUDE_IN_CHROME_MCP_TOOLS,
      userInvocable: true,
      isEnabled: () => shouldAutoEnableClaudeInChrome(),
-@@ -554607,9 +554481,9 @@
+@@ -554607,9 +554450,9 @@
  function registerDebugSkill() {
    registerBundledSkill({
      name: "debug",
@@ -2912,7 +2980,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
      disableModelInvocation: true,
      userInvocable: true,
      async getPromptForCommand(args) {
-@@ -555305,9 +555179,9 @@
+@@ -555305,9 +555148,9 @@
  function registerLoopSkill() {
    registerBundledSkill({
      name: "loop",
@@ -2925,7 +2993,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
      userInvocable: true,
      isEnabled: isKairosCronEnabled,
      async getPromptForCommand(args) {
-@@ -555337,7 +555211,7 @@
+@@ -555337,7 +555180,7 @@
  function registerSimplifySkill() {
    registerBundledSkill({
      name: "simplify",
@@ -2934,7 +3002,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
      userInvocable: true,
      async getPromptForCommand(args) {
        let prompt = SIMPLIFY_PROMPT;
-@@ -568761,8 +568635,8 @@
+@@ -568761,8 +568604,8 @@
    install = {
      type: "local-jsx",
      name: "install",
@@ -2945,7 +3013,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
      async call(onDone, _context, args) {
        const force = args.includes("--force");
        const nonFlagArgs = args.filter((arg) => !arg.startsWith("--"));
-@@ -569155,7 +569029,7 @@
+@@ -569155,7 +568998,7 @@
          await gracefulShutdown(1);
        }
        if (result.latestVersion === "99.0.0") {
@@ -2954,7 +3022,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
  `);
        } else {
          writeToStdout(source_default.green(`Successfully updated from ${"99.0.0"} to version ${result.latestVersion}`) + `
-@@ -569219,7 +569093,7 @@
+@@ -569219,7 +569062,7 @@
      await gracefulShutdown(1);
    }
    if (latestVersion === "99.0.0") {
@@ -2963,7 +3031,16 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
  `);
      await gracefulShutdown(0);
    }
-@@ -569709,7 +569583,7 @@
+@@ -569658,7 +569501,7 @@
+     await init();
+     profileCheckpoint("preAction_after_init");
+     if (!isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_TERMINAL_TITLE)) {
+-      process.title = "claude";
++      process.title = "vertex";
+     }
+     const {
+       initSinks: initSinks2
+@@ -569709,7 +569552,7 @@
      }
      if (prompt === "code") {
        logEvent("tengu_code_prompt_ignored", {});
@@ -2972,16 +3049,16 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
        prompt = undefined;
      }
      if (prompt && typeof prompt === "string" && !/\s/.test(prompt) && prompt.length > 0) {
-@@ -571297,7 +571171,7 @@
+@@ -571297,7 +571140,7 @@
          pendingHookMessages
        }, renderAndRun);
      }
 -  }).version("1.0.0 (Vertex)", "-v, --version", "Output the version number");
-+  }).version("1.2.1 (Vertex)", "-v, --version", "Mostra o numero da versao");
++  }).version("1.2.2 (Vertex)", "-v, --version", "Mostra o numero da versao");
    program2.option("-w, --worktree [name]", "Create a new git worktree for this session (optionally specify a name)");
    program2.option("--tmux", "Create a tmux session for the worktree (requires --worktree). Uses iTerm2 native panes when available; use --tmux=classic for traditional tmux.");
    if (canUserConfigureAdvisor()) {
-@@ -571390,33 +571264,34 @@
+@@ -571390,33 +571233,34 @@
    if (false) {}
    if (false) {}
    const auth2 = program2.command("auth").description("Manage authentication").configureHelp(createSortedHelpConfig());
@@ -3035,7 +3112,7 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
    });
    const coworkOption = () => new Option("--cowork", "Use cowork_plugins directory").hideHelp();
    const pluginCmd = program2.command("plugin").alias("plugins").description("Manage Claude Code plugins").configureHelp(createSortedHelpConfig());
-@@ -571487,14 +571362,9 @@
+@@ -571487,14 +571331,9 @@
      } = await Promise.resolve().then(() => (init_plugins(), exports_plugins));
      await pluginUpdateHandler2(plugin2, options2);
    });
@@ -3053,12 +3130,12 @@ diff --git a/vendor/vertex-cli/dist/cli.mjs b/vendor/vertex-cli/dist/cli.mjs
    });
    program2.command("agents").description("List configured agents").option("--setting-sources <sources>", "Comma-separated list of setting sources to load (user, project, local).").action(async () => {
      const {
-@@ -571825,7 +571695,7 @@
+@@ -571825,7 +571664,7 @@
  async function main2() {
    const args = process.argv.slice(2);
    if (args.length === 1 && (args[0] === "--version" || args[0] === "-v" || args[0] === "-V")) {
 -    console.log(`${"1.0.0"} (Vertex)`);
-+    console.log(`${"1.2.1"} (Vertex)`);
++    console.log(`${"1.2.2"} (Vertex)`);
      return;
    }
    if (args.includes("--provider")) {
