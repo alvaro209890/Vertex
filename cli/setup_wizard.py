@@ -44,7 +44,7 @@ def run_login_wizard() -> bool:
     """
     _banner()
     print("Faca login com sua conta do Vertex.")
-    print("Nao tem conta? Crie uma em https://vertex-ad5da.firebaseapp.com")
+    print("Nao tem conta? Crie uma em https://vertex-ad5da.web.app")
     print()
 
     email = _email_input()
@@ -89,7 +89,7 @@ def run_setup_wizard(env_path: Path) -> str:
     _banner()
     print("O Vertex agora usa autenticacao por email/senha (Firebase).")
     print()
-    print("Crie sua conta em https://vertex-ad5da.firebaseapp.com")
+    print("Crie sua conta em https://vertex-ad5da.web.app")
     print("e depois faca login aqui.")
     print()
 
