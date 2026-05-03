@@ -526,6 +526,10 @@ def cli() -> None:
     env["CLAUDE_CONFIG_DIR"] = str(VERTEX_CLI_CONFIG_DIR)
     env.update(_managed_vertex_cli_env(port))
 
+    # Set NODE_OPTIONS memory limit when not user-overridden
+    if "NODE_OPTIONS" not in env:
+        env["NODE_OPTIONS"] = "--max-old-space-size=8192"
+
     # Launch Vertex CLI
     if not _is_version_request():
         print("Launching Vertex CLI...")
