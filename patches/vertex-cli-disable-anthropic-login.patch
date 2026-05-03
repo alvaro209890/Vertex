@@ -1,5 +1,5 @@
---- /tmp/cli-head.mjs	2026-05-03 13:23:12.557540355 -0300
-+++ /tmp/cli-patched.mjs	2026-05-03 13:23:12.469540542 -0300
+--- vendor/vertex-cli/dist/cli.mjs
++++ vendor/vertex-cli/dist/cli.mjs
 @@ -52993,15 +52993,15 @@
        external: "acceptEdits"
      },
