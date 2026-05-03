@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 import sys
 from pathlib import Path
@@ -174,8 +175,8 @@ def _handle_auth_login_request() -> bool:
     if not _is_auth_login_request():
         return False
 
-    from vertex_auth import clear_auth
     from cli.setup_wizard import run_login_wizard
+    from vertex_auth import clear_auth
 
     clear_auth()
     run_login_wizard()
@@ -191,7 +192,7 @@ def _handle_logout_request() -> bool:
 
     clear_auth()
     print(f"{GREEN}✓ Logout realizado. Token removido.{RESET}")
-    print(f"  Use `vertex auth login` para autenticar novamente.")
+    print("  Use `vertex auth login` para autenticar novamente.")
     return True
 
 
@@ -494,10 +495,8 @@ def _record_usage_to_api(model: str, tokens: int) -> None:
         },
         method="POST",
     )
-    try:
+    with contextlib.suppress(Exception):
         urllib.request.urlopen(req, timeout=5)
-    except Exception:
-        pass  # falha silenciosa para nao atrapalhar o usuario
 
 
 def cli() -> None:

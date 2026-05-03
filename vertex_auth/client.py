@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import time
 from pathlib import Path
 
@@ -81,9 +80,9 @@ def sign_in_with_email(email, password):
         raise ConnectionError(
             "Nao foi possivel conectar ao servidor de autenticacao. "
             "Verifique sua conexao com a internet."
-        )
+        ) from None
     except httpx.TimeoutException:
-        raise ConnectionError("Tempo limite excedido ao tentar autenticar.")
+        raise ConnectionError("Tempo limite excedido ao tentar autenticar.") from None
 
     if resp.status_code != 200:
         try:
