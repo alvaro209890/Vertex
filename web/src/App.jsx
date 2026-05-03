@@ -31,7 +31,7 @@ export default function App() {
 
   if (!user) {
     if (page === 'register') {
-      return <RegisterPage onRegister={() => setPage('login')} goToLogin={() => setPage('login')} />;
+      return <RegisterPage goToLogin={() => setPage('login')} />;
     }
     return <LoginPage onLogin={() => setPage('dashboard')} goToRegister={() => setPage('register')} />;
   }
