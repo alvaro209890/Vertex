@@ -29,6 +29,10 @@ vertex auth login
 registrado em `../../patches/vertex-cli-disable-anthropic-login.patch`, para que
 o patch possa ser reaplicado quando o runtime vendorizado for atualizado.
 
+O patch cobre todas as traducoes para portugues brasileiro dos comandos,
+mensagens de status, descricoes de ferramentas e textos visiveis ao usuario
+na CLI. Alteracoes em strings visiveis devem sempre ser refletidas no patch.
+
 Depois de alterar o bundle, rode:
 
 ```bash

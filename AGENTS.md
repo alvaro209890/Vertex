@@ -21,6 +21,15 @@
 - Goal: Zero-defect, root-cause-oriented engineering for bugs; test-driven engineering for new features. Think carefully; no need to rush.
 - Code: Write the simplest code possible. Keep the codebase minimal and modular.
 
+## PORTUGUESE REQUIRED
+
+- All user-facing strings in the bundled CLI (`vendor/vertex-cli/dist/cli.mjs`)
+  must be in Brazilian Portuguese. This includes slash-command descriptions,
+  status/progress messages, error strings, argument hints, work-status labels,
+  and tool descriptions. English equivalents must NOT appear in the patch or the
+  bundle. The canonical patch `patches/vertex-cli-disable-anthropic-login.patch`
+  captures all translations together with the identity and auth customizations.
+
 ## ARCHITECTURE PRINCIPLES (see PLAN.md)
 
 - **Shared utilities**: Put shared Anthropic protocol logic in neutral `core/anthropic/` modules. Do not have one provider import from another provider's utils.
