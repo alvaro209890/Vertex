@@ -11,13 +11,13 @@ from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from loguru import logger
 
+from api.metrics import metrics_store
 from config.settings import Settings
 from core.anthropic import get_token_count, get_user_facing_error_message
 from core.anthropic.sse import ANTHROPIC_SSE_RESPONSE_HEADERS
 from providers.base import BaseProvider
 from providers.exceptions import InvalidRequestError, ProviderError
 
-from api.metrics import metrics_store
 from .model_router import ModelRouter
 from .models.anthropic import MessagesRequest, TokenCountRequest
 from .models.responses import TokenCountResponse
@@ -99,7 +99,6 @@ class ClaudeProxyService:
             _require_non_empty_messages(request_data.messages)
             metrics_store.record_request()
 
-
             routed = self._model_router.resolve_messages_request(request_data)
             if self._settings.enable_web_server_tools and is_web_server_tool_request(
                 routed.request
@@ -147,7 +146,11 @@ class ClaudeProxyService:
             input_tokens = self._token_counter(
                 routed.request.messages, routed.request.system, routed.request.tools
             )
-            session_id = request_data.metadata.get("user_id", "default_session") if request_data.metadata else "default_session"
+            session_id = (
+                request_data.metadata.get("user_id", "default_session")
+                if request_data.metadata
+                else "default_session"
+            )
             metrics_store.record_tokens(session_id, input_tokens)
 
             return anthropic_sse_streaming_response(

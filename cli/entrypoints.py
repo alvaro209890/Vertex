@@ -96,7 +96,9 @@ def _proxy_settings_fingerprint(values: dict[str, str]) -> str:
         "enable_sonnet_thinking": _env_optional_bool(
             values.get("ENABLE_SONNET_THINKING")
         ),
-        "enable_haiku_thinking": _env_optional_bool(values.get("ENABLE_HAIKU_THINKING")),
+        "enable_haiku_thinking": _env_optional_bool(
+            values.get("ENABLE_HAIKU_THINKING")
+        ),
     }
     raw = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]

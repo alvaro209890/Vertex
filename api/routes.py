@@ -201,6 +201,7 @@ async def stop_cli(request: Request, _auth=Depends(require_api_key)):
     logger.info("STOP_CLI: source=handler cancelled_count={}", count)
     return {"status": "stopped", "cancelled_count": count}
 
+
 @router.get("/api/metrics")
 async def get_metrics():
     """Get request and token metrics."""

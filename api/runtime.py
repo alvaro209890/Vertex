@@ -89,19 +89,22 @@ class AppRuntime:
         self._publish_state()
 
         # Start Dashboard Server
-        import threading
-        import socket
         import http.server
-        import socketserver
         import os
+        import socket
+        import socketserver
+        import threading
 
         def start_dashboard():
             try:
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.bind(('127.0.0.1', 0))
+                sock.bind(("127.0.0.1", 0))
                 port = sock.getsockname()[1]
                 sock.close()
-                dashboard_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dashboard")
+                dashboard_dir = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    "dashboard",
+                )
                 os.chdir(dashboard_dir)
                 Handler = http.server.SimpleHTTPRequestHandler
                 httpd = socketserver.TCPServer(("", port), Handler)
@@ -115,7 +118,6 @@ class AppRuntime:
 
         dashboard_thread = threading.Thread(target=start_dashboard, daemon=True)
         dashboard_thread.start()
-
 
     async def shutdown(self) -> None:
         verbose = self.settings.log_api_error_tracebacks
