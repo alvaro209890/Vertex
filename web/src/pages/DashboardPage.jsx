@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import CommandsPage from './CommandsPage';
 
 const API_BASE = 'https://vertex-api.cursar.space';
 
 export default function DashboardPage({ user, onLogout }) {
+  const [tab, setTab] = useState('dashboard');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -51,7 +53,29 @@ export default function DashboardPage({ user, onLogout }) {
         </div>
       </header>
 
-      <div className="container">
+      <nav className="tabs">
+        <button
+          className={`tab ${tab === 'dashboard' ? 'tab-active' : ''}`}
+          onClick={() => setTab('dashboard')}
+        >
+          Dashboard
+        </button>
+        <button
+          className={`tab ${tab === 'commands' ? 'tab-active' : ''}`}
+          onClick={() => setTab('commands')}
+        >
+          Comandos
+        </button>
+      </nav>
+
+      {tab === 'commands' && (
+        <div className="container">
+          <CommandsPage />
+        </div>
+      )}
+
+      {tab === 'dashboard' && (
+        <div className="container">
         {loading && <div className="loading">Carregando dados...</div>}
 
         {error && <div className="error-msg">{error}</div>}
@@ -117,6 +141,7 @@ export default function DashboardPage({ user, onLogout }) {
           </>
         )}
       </div>
+      )}
     </div>
   );
 }

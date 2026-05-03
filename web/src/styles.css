@@ -302,3 +302,113 @@ tfoot td {
     padding: 24px;
   }
 }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #333;
+  background: #1a1a1a;
+  padding: 0 24px;
+}
+
+.tab {
+  background: none;
+  border: none;
+  color: #888;
+  padding: 12px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.tab:hover {
+  color: #e0e0e0;
+}
+
+.tab-active {
+  color: #00e676;
+  border-bottom-color: #00e676;
+}
+
+/* Commands page */
+.commands-page {
+  padding: 24px 0;
+}
+
+.section-title {
+  color: #00e676;
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.section-subtitle {
+  color: #888;
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+.cmd-group {
+  margin-bottom: 32px;
+}
+
+.cmd-category {
+  color: #e0e0e0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.cmd-table-wrapper {
+  overflow-x: auto;
+}
+
+.cmd-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cmd-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: #666;
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #333;
+}
+
+.cmd-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #222;
+  font-size: 13px;
+  vertical-align: top;
+}
+
+.cmd-cell-cmd {
+  width: 40%;
+}
+
+.cmd-cell-cmd code {
+  background: #252525;
+  color: #4fc3f7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.cmd-cell-desc {
+  color: #aaa;
+  line-height: 1.4;
+}
+
+.cmd-table tbody tr:hover {
+  background: #1a1a1a;
+}
