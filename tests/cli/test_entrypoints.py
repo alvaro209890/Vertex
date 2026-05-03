@@ -440,35 +440,16 @@ def test_cli_auth_status_treats_logout_command_as_missing_key(tmp_path: Path) ->
     assert "Rode `vertex auth login`" in output
 
 
-def test_setup_wizard_rejects_vertex_commands_as_api_keys() -> None:
-    """Interactive setup should not save /logout or similar commands as API keys."""
-    from cli.setup_wizard import DEFAULT_SETUP_OPTION, prompt_provider_api_key
-
-    with patch("builtins.input", side_effect=["/logout", "sk-real-deepseek"]):
-        assert prompt_provider_api_key(DEFAULT_SETUP_OPTION) == "sk-real-deepseek"
-
-
-def test_setup_wizard_api_key_screen_is_portuguese(tmp_path: Path, capsys) -> None:
-    """The first-run DeepSeek key prompt should be user-facing Portuguese."""
+def test_setup_wizard_screen_is_portuguese(tmp_path: Path, capsys) -> None:
+    """The first-run setup wizard should be user-facing Portuguese."""
     from cli.setup_wizard import run_setup_wizard
 
-    prompts: list[str] = []
-
-    def fake_input(prompt: str) -> str:
-        prompts.append(prompt)
-        return "sk-real-deepseek"
-
-    with patch("builtins.input", side_effect=fake_input):
+    with patch("builtins.input", side_effect=["", ""]):
         run_setup_wizard(tmp_path / ".env")
 
     output = capsys.readouterr().out
     assert "Bem-vindo ao Vertex" in output
-    assert "O Vertex usa DeepSeek para todas as conversas." in output
-    assert "Crie uma chave DeepSeek em:" in output
-    assert "Chave salva em" in output
-    assert "Rode " in output
-    assert "vertex /logout" in output
-    assert prompts == ["\x1b[1mChave de API DeepSeek:\x1b[0m "]
+    assert "O Vertex agora usa autenticacao por email/senha" in output
 
 
 def test_cli_blocks_anthropic_setup_token() -> None:
