@@ -184,6 +184,98 @@ def sanitize_deepseek_messages_for_native(
         new_msg = dict(message)
         new_msg["content"] = filtered or ""
         sanitized.append(new_msg)
+    return _sanitize_deepseek_tool_protocol(sanitized)
+
+
+def _content_blocks(message: Any) -> list[Any] | None:
+    if not isinstance(message, dict):
+        return None
+    content = message.get("content")
+    return content if isinstance(content, list) else None
+
+
+def _tool_result_ids(message: Any) -> set[str]:
+    blocks = _content_blocks(message)
+    if not blocks:
+        return set()
+    return {
+        str(block["tool_use_id"])
+        for block in blocks
+        if isinstance(block, dict)
+        and block.get("type") == "tool_result"
+        and isinstance(block.get("tool_use_id"), str)
+    }
+
+
+def _tool_use_ids(message: Any) -> set[str]:
+    blocks = _content_blocks(message)
+    if not blocks:
+        return set()
+    return {
+        str(block["id"])
+        for block in blocks
+        if isinstance(block, dict)
+        and block.get("type") == "tool_use"
+        and isinstance(block.get("id"), str)
+    }
+
+
+def _sanitize_deepseek_tool_protocol(messages: list[Any]) -> list[Any]:
+    sanitized = list(messages)
+    for i, message in enumerate(sanitized):
+        if not isinstance(message, dict) or message.get("role") != "assistant":
+            continue
+        blocks = _content_blocks(message)
+        if not blocks:
+            continue
+
+        tool_result_ids = _tool_result_ids(
+            sanitized[i + 1] if i + 1 < len(sanitized) else None
+        )
+        tool_blocks: list[Any] = []
+        other_blocks: list[Any] = []
+        changed = False
+        for block in blocks:
+            if not isinstance(block, dict) or block.get("type") != "tool_use":
+                other_blocks.append(block)
+                continue
+            tool_id = block.get("id")
+            if isinstance(tool_id, str) and tool_id in tool_result_ids:
+                tool_blocks.append(block)
+            else:
+                changed = True
+
+        reordered = [*other_blocks, *tool_blocks]
+        if reordered != blocks:
+            changed = True
+        if changed:
+            new_message = dict(message)
+            new_message["content"] = reordered or ""
+            sanitized[i] = new_message
+
+    for i, message in enumerate(sanitized):
+        if not isinstance(message, dict) or message.get("role") != "user":
+            continue
+        blocks = _content_blocks(message)
+        if not blocks:
+            continue
+        previous_tool_use_ids = _tool_use_ids(sanitized[i - 1] if i > 0 else None)
+        filtered: list[Any] = []
+        changed = False
+        for block in blocks:
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "tool_result"
+                and block.get("tool_use_id") not in previous_tool_use_ids
+            ):
+                changed = True
+                continue
+            filtered.append(block)
+        if changed:
+            new_message = dict(message)
+            new_message["content"] = filtered or ""
+            sanitized[i] = new_message
+
     return sanitized
 
 

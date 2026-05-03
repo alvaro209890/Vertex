@@ -389,6 +389,17 @@ def test_tool_result_blocks_are_moved_before_text_for_deepseek(deepseek_provider
             "model": "m",
             "messages": [
                 {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "t1",
+                            "name": "n",
+                            "input": {},
+                        }
+                    ],
+                },
+                {
                     "role": "user",
                     "content": [
                         {"type": "text", "text": "."},
@@ -398,14 +409,14 @@ def test_tool_result_blocks_are_moved_before_text_for_deepseek(deepseek_provider
                             "content": "ok",
                         },
                     ],
-                }
+                },
             ],
         }
     )
 
     body = deepseek_provider._build_request_body(request)
 
-    blocks = body["messages"][0]["content"]
+    blocks = body["messages"][1]["content"]
     assert blocks[0]["type"] == "tool_result"
     assert blocks[1]["type"] == "text"
 
@@ -416,6 +427,17 @@ def test_tool_result_list_of_strings_is_serialized_for_deepseek(deepseek_provide
             "model": "m",
             "messages": [
                 {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "t1",
+                            "name": "n",
+                            "input": {},
+                        }
+                    ],
+                },
+                {
                     "role": "user",
                     "content": [
                         {
@@ -424,16 +446,108 @@ def test_tool_result_list_of_strings_is_serialized_for_deepseek(deepseek_provide
                             "content": ["ok", "done"],
                         }
                     ],
-                }
+                },
             ],
         }
     )
 
     body = deepseek_provider._build_request_body(request)
 
-    result = body["messages"][0]["content"][0]
+    result = body["messages"][1]["content"][0]
     assert result["type"] == "tool_result"
     assert result["content"] == '["ok", "done"]'
+
+
+def test_assistant_tool_use_blocks_are_moved_after_text_for_deepseek(
+    deepseek_provider,
+):
+    request = MessagesRequest.model_validate(
+        {
+            "model": "m",
+            "messages": [
+                {"role": "user", "content": "x"},
+                {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "t1",
+                            "name": "n",
+                            "input": {},
+                        },
+                        {"type": "text", "text": "after"},
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": "t1",
+                            "content": "ok",
+                        }
+                    ],
+                },
+            ],
+        }
+    )
+
+    body = deepseek_provider._build_request_body(request)
+
+    blocks = body["messages"][1]["content"]
+    assert blocks[0]["type"] == "text"
+    assert blocks[1]["type"] == "tool_use"
+
+
+def test_orphaned_tool_use_and_result_blocks_are_removed_for_deepseek(
+    deepseek_provider,
+):
+    request = MessagesRequest.model_validate(
+        {
+            "model": "m",
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "missing",
+                            "name": "n",
+                            "input": {},
+                        },
+                        {
+                            "type": "tool_use",
+                            "id": "kept",
+                            "name": "n",
+                            "input": {},
+                        },
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": "kept",
+                            "content": "ok",
+                        },
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": "unexpected",
+                            "content": "bad",
+                        },
+                    ],
+                },
+            ],
+        }
+    )
+
+    body = deepseek_provider._build_request_body(request)
+
+    assistant_blocks = body["messages"][0]["content"]
+    user_blocks = body["messages"][1]["content"]
+    assert [block["id"] for block in assistant_blocks] == ["kept"]
+    assert [block["tool_use_id"] for block in user_blocks] == ["kept"]
 
 
 def test_preflight_rejects_user_image():
