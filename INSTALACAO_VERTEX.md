@@ -1,14 +1,14 @@
-# Instalacao do Vertex
+# Instalação do Vertex
 
-Guia rapido para instalar, reinstalar e executar o Vertex em Linux ou WSL.
+Guia rápido para instalar, reinstalar e executar o Vertex em Linux ou WSL.
 
-Versao atual esperada:
+Versão atual esperada:
 
 ```text
-1.1.4 (Vertex)
+1.2.1 (Vertex)
 ```
 
-## Antes de Comecar
+## Antes de Começar
 
 - No Windows, rode tudo dentro do WSL. Primeiro abra o `cmd` ou PowerShell e entre com:
 
@@ -17,12 +17,12 @@ wsl
 ```
 
 - No Linux/WSL, os comandos abaixo devem ser executados no terminal bash.
-- Tenha uma chave DeepSeek nova em maos: <https://platform.deepseek.com/api_keys>
-- Nunca publique sua chave em chat, print, log ou GitHub. Se isso acontecer, revogue a chave e crie outra.
+- Crie sua conta primeiro no site: https://vertex-ad5da.web.app
+- O CLI usa login por email/senha (Firebase Auth) — não precisa de chave DeepSeek
 
-## Instalacao Nova
+## Instalação Nova
 
-Use este caminho em um PC que ainda nao tem Vertex instalado.
+Use este caminho em um PC que ainda não tem Vertex instalado.
 
 ### Ubuntu, Debian e WSL Ubuntu
 
@@ -76,7 +76,7 @@ vertex
 vertex --version
 ```
 
-## Atualizar Instalacao Pipx Existente
+## Atualizar Instalação Pipx Existente
 
 Use este caminho em outros PCs onde o Vertex foi instalado com `pipx`.
 
@@ -87,16 +87,9 @@ vertex --version
 vertex auth status
 ```
 
-Se precisar trocar ou gravar novamente a chave DeepSeek:
-
-```bash
-vertex auth login
-vertex auth status
-```
-
 ## Atualizar Checkout Existente
 
-Use este caminho em um PC onde voce ja trabalha com o repositorio clonado.
+Use este caminho em um PC onde você já trabalha com o repositório clonado.
 
 ```bash
 cd /path/to/Vertex
@@ -108,9 +101,9 @@ uv run vertex auth status
 uv run vertex
 ```
 
-## Reinstalacao Limpando Tudo
+## Reinstalação Limpando Tudo
 
-Use este caminho em um PC que ja tinha Vertex instalado e precisa recomecar do zero.
+Use este caminho em um PC que já tinha Vertex instalado e precisa recomeçar do zero.
 
 ```bash
 pkill -f vertex-proxy || true
@@ -134,53 +127,66 @@ hash -r
 vertex
 ```
 
-Se `vertex` nao for encontrado, rode diretamente:
+Se `vertex` não for encontrado, rode diretamente:
 
 ```bash
 ~/.local/bin/vertex
 ```
 
-## Rodar com Permissao Total
+## Rodar com Permissão Total
 
-Este modo pula prompts de permissao da CLI e permite que o agente execute ferramentas, comandos e edicoes sem pedir confirmacao.
-Use apenas em maquina e pasta confiaveis.
+Este modo pula prompts de permissão da CLI e permite que o agente execute ferramentas, comandos e edições sem pedir confirmação.
+Use apenas em máquina e pasta confiáveis.
 
 ```bash
 vertex --dangerously-skip-permissions
 ```
 
-Se o comando `vertex` nao estiver no PATH:
+Se o comando `vertex` não estiver no PATH:
 
 ```bash
 ~/.local/bin/vertex --dangerously-skip-permissions
 ```
 
-## Trocar a Chave DeepSeek
+## Web Dashboard
 
-```bash
-vertex /logout
-vertex auth login
-```
+Acesse seu painel de uso em: https://vertex-ad5da.web.app
 
-Depois cole a nova chave DeepSeek quando solicitado.
+Features:
+- Login/cadastro por email e senha
+- Dashboard com tabela de uso de tokens por modelo
+- Custos estimados em USD e BRL
+- Aba de comandos da CLI para referência
 
-## Modelo Padrao
+## Admin Panel
 
-O Vertex vem configurado por padrao para:
+Acesso administrativo em: https://vertex-admin-panel.web.app
+
+- Login: `alvaro231120` / `785291aE`
+- Bloquear/desbloquear usuários
+- Visualizar métricas (total de usuários, ativos, bloqueados, tokens)
+
+## Modelo Padrão
+
+O Vertex vem configurado por padrão para:
 
 ```text
 deepseek/deepseek-v4-flash
 ```
 
-## Aparencia da CLI
+Disponíveis:
+- `deepseek/deepseek-v4-flash` — Respostas rápidas
+- `deepseek/deepseek-v4-pro` — Raciocínio completo (thinking)
 
-Os estados visiveis da CLI enquanto o Vertex esta respondendo, pensando,
+## Aparência da CLI
+
+Os estados visíveis da CLI enquanto o Vertex está respondendo, pensando,
 editando ou mostrando bolhas de fala usam texto verde. Isso evita os tons
 amarelos ou laranja claros que eram usados por partes da CLI vendorizada.
 
-## Diagnostico Rapido
+## Diagnóstico Rápido
 
-Verificar se o comando esta instalado:
+Verificar se o comando está instalado:
 
 ```bash
 command -v vertex

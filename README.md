@@ -11,13 +11,22 @@ clear that it runs DeepSeek models through the local proxy.
 
 ```bash
 pipx install --force git+https://github.com/alvaro209890/Vertex.git
-vertex         # first run prompts for your DeepSeek API key
+vertex         # first run prompts for Firebase login
 vertex --version
 ```
 
 </div>
 
 Current bundled Vertex CLI version: `1.2.1`.
+
+## Web Dashboard
+
+Vertex includes a web dashboard to track your token usage:
+
+- **Main Site**: https://vertex-ad5da.web.app — Create account, login, view usage/costs
+- **Admin Panel**: https://vertex-admin-panel.web.app — Manage users (block/unlock, metrics)
+
+Create your account at the main site before using the CLI.
 
 ## What You Get
 
@@ -62,12 +71,11 @@ Requires Python 3.12+ and Node.js 20+.
 
 ### 2. Configure
 
-Run `vertex`. If `~/.config/vertex/.env` is missing or `DEEPSEEK_API_KEY` is
-empty, Vertex asks for your DeepSeek API key and saves it.
-Get one at [platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys).
+Run `vertex`. On first run, Vertex asks for your email and password (Firebase
+Auth). Create your account at https://vertex-ad5da.web.app before using the CLI.
 
-`vertex-init` is optional; it only pre-creates the config file. To change the key
-later: `vertex /logout` or `vertex auth login`.
+`vertex-init` is optional; it only pre-creates the config file. To login again
+later: `vertex auth login`.
 
 ### 3. Open Vertex
 
@@ -462,3 +470,36 @@ Run them in that order before pushing. CI enforces the same checks.
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## Server Infrastructure (Self-Hosted)
+
+The Vertex server runs on a local machine and exposes services via Cloudflare Tunnel.
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| Main Website | https://vertex-ad5da.web.app | User dashboard (Firebase Hosting) |
+| Admin Panel | https://vertex-admin-panel.web.app | User management (Firebase Hosting) |
+| API | https://vertex-api.cursar.space | Express backend (Cloudflare Tunnel) |
+
+### Admin Panel
+
+Access the admin panel at https://vertex-admin-panel.web.app to manage users:
+- Login: `alvaro231120` / `785291aE`
+- View metrics: total users, active, blocked, tokens consumed
+- Block/unlock users (prevents CLI access)
+- User table with registration date, last usage, token count
+
+### Auto-Start (systemd)
+
+The Express backend and Cloudflare Tunnel start automatically on boot:
+
+```bash
+systemctl --user enable vertex-backend.service   # enable at boot
+systemctl --user start vertex-backend.service    # start now
+systemctl --user status vertex-backend.service   # check status
+journalctl --user -u vertex-backend.service -f   # follow logs
+```
+
+Service file: `~/.config/systemd/user/vertex-backend.service`
