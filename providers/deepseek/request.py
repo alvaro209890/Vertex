@@ -292,24 +292,12 @@ def _sanitize_deepseek_tool_result_message(message: dict[str, Any]) -> dict[str,
             other_blocks.append(block)
             continue
         block_content = block.get("content")
-        if isinstance(block_content, dict):
+        if block_content is not None and not isinstance(block_content, str):
             new_block = dict(block)
             new_block["content"] = json.dumps(
                 block_content,
                 ensure_ascii=True,
                 sort_keys=True,
-            )
-            tool_results.append(new_block)
-            changed = True
-            continue
-
-        if isinstance(block_content, list) and any(
-            not isinstance(item, dict) for item in block_content
-        ):
-            new_block = dict(block)
-            new_block["content"] = json.dumps(
-                block_content,
-                ensure_ascii=True,
             )
             tool_results.append(new_block)
             changed = True

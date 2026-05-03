@@ -85,6 +85,25 @@ def _installed_vertex_version() -> str:
         return "unknown"
 
 
+def _settings_fingerprint(settings: Settings) -> str:
+    """Return a non-secret fingerprint for launcher/proxy config freshness checks."""
+    import hashlib
+    import json
+
+    payload = {
+        "model": settings.model,
+        "model_opus": settings.model_opus,
+        "model_sonnet": settings.model_sonnet,
+        "model_haiku": settings.model_haiku,
+        "enable_model_thinking": settings.enable_model_thinking,
+        "enable_opus_thinking": settings.enable_opus_thinking,
+        "enable_sonnet_thinking": settings.enable_sonnet_thinking,
+        "enable_haiku_thinking": settings.enable_haiku_thinking,
+    }
+    raw = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
 # =============================================================================
 # Routes
 # =============================================================================
@@ -139,9 +158,13 @@ async def probe_root(_auth=Depends(require_api_key)):
 
 
 @router.get("/health")
-async def health():
+async def health(settings: Settings = Depends(get_settings)):
     """Health check endpoint."""
-    return {"status": "healthy", "version": _installed_vertex_version()}
+    return {
+        "status": "healthy",
+        "version": _installed_vertex_version(),
+        "settings_fingerprint": _settings_fingerprint(settings),
+    }
 
 
 @router.api_route("/health", methods=["HEAD", "OPTIONS"])

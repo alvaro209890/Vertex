@@ -474,7 +474,7 @@ def test_tool_result_blocks_are_moved_before_text_for_deepseek(deepseek_provider
     assert blocks[1]["type"] == "text"
 
 
-def test_tool_result_list_of_strings_is_serialized_for_deepseek(deepseek_provider):
+def test_tool_result_list_content_is_serialized_for_deepseek(deepseek_provider):
     request = MessagesRequest.model_validate(
         {
             "model": "m",
@@ -496,7 +496,7 @@ def test_tool_result_list_of_strings_is_serialized_for_deepseek(deepseek_provide
                         {
                             "type": "tool_result",
                             "tool_use_id": "t1",
-                            "content": ["ok", "done"],
+                            "content": [{"type": "text", "text": "ok"}],
                         }
                     ],
                 },
@@ -508,7 +508,7 @@ def test_tool_result_list_of_strings_is_serialized_for_deepseek(deepseek_provide
 
     result = body["messages"][1]["content"][0]
     assert result["type"] == "tool_result"
-    assert result["content"] == '["ok", "done"]'
+    assert result["content"] == '[{"text": "ok", "type": "text"}]'
 
 
 def test_assistant_tool_use_blocks_are_moved_after_text_for_deepseek(

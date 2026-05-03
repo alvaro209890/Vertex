@@ -17,7 +17,7 @@ vertex --version
 
 </div>
 
-Current bundled Vertex CLI version: `1.2.0`.
+Current bundled Vertex CLI version: `1.2.1`.
 
 ## What You Get
 
@@ -122,7 +122,7 @@ uv run vertex auth status
 Do not commit API keys to git. After updating, Vertex ignores non-DeepSeek
 `MODEL*` values and routes chat through DeepSeek only.
 
-The expected version after this update is `1.2.0 (Vertex)`.
+The expected version after this update is `1.2.1 (Vertex)`.
 
 ## DeepSeek Only
 

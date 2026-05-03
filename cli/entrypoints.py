@@ -81,6 +81,39 @@ def _configured_model_values() -> dict[str, str]:
     }
 
 
+def _proxy_settings_fingerprint(values: dict[str, str]) -> str:
+    """Return the non-secret proxy config fingerprint exposed by /health."""
+    import hashlib
+    import json
+
+    payload = {
+        "model": values.get("MODEL") or DEEPSEEK_ONLY_DEFAULT_MODEL,
+        "model_opus": values.get("MODEL_OPUS") or None,
+        "model_sonnet": values.get("MODEL_SONNET") or None,
+        "model_haiku": values.get("MODEL_HAIKU") or None,
+        "enable_model_thinking": _env_bool(values.get("ENABLE_MODEL_THINKING"), True),
+        "enable_opus_thinking": _env_optional_bool(values.get("ENABLE_OPUS_THINKING")),
+        "enable_sonnet_thinking": _env_optional_bool(
+            values.get("ENABLE_SONNET_THINKING")
+        ),
+        "enable_haiku_thinking": _env_optional_bool(values.get("ENABLE_HAIKU_THINKING")),
+    }
+    raw = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def _env_bool(value: str | None, default: bool) -> bool:
+    if value is None or value == "":
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_optional_bool(value: str | None) -> bool | None:
+    if value is None or value == "":
+        return None
+    return _env_bool(value, False)
+
+
 def _deepseek_model_or_default(
     model_ref: str | None, default: str = DEEPSEEK_ONLY_DEFAULT_MODEL
 ) -> str:
@@ -409,9 +442,13 @@ def _start_proxy() -> bool:
 
     port = os.environ.get("VERTEX_PORT", "8083")
     expected_version = _installed_vertex_version()
+    expected_fingerprint = _proxy_settings_fingerprint(_load_runtime_env_values())
     health = _read_proxy_health(port)
     if health is not None:
-        if health.get("version") == expected_version:
+        if (
+            health.get("version") == expected_version
+            and health.get("settings_fingerprint") == expected_fingerprint
+        ):
             return True
         print("Restarting Vertex proxy...")
         if _terminate_vertex_proxy_processes():
