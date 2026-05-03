@@ -236,6 +236,8 @@ def _is_version_request(argv: list[str] | None = None) -> bool:
 
 def _managed_vertex_cli_env(port: str) -> dict[str, str]:
     """Return environment values that force the vendored CLI through Vertex."""
+    import json
+
     models = _configured_model_values()
     env = {
         key: value.format(port=port)
@@ -253,6 +255,16 @@ def _managed_vertex_cli_env(port: str) -> dict[str, str]:
             "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": _display_model_name(models["haiku"]),
         }
     )
+    # Inject extra models so /model picker shows both DeepSeek variants.
+    unique_models: list[str] = []
+    for m in (models["opus"], models["sonnet"], models["haiku"], models["default"]):
+        if m and m not in unique_models:
+            unique_models.append(m)
+    # Always ensure both known DeepSeek models are in the list
+    for known in ("deepseek/deepseek-v4-flash", "deepseek/deepseek-v4-pro"):
+        if known not in unique_models:
+            unique_models.append(known)
+    env["OPENCLAUDE_EXTRA_MODEL_OPTIONS"] = json.dumps(unique_models)
     return env
 
 
