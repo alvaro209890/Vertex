@@ -118,7 +118,7 @@ def test_cli_launches_vendored_vertex_runtime(tmp_path: Path) -> None:
     node_bin.write_text("", encoding="utf-8")
 
     with (
-        patch.object(entrypoints, "_run_wizard_if_needed") as wizard,
+        patch.object(entrypoints, "_run_auth_wizard_if_needed") as wizard,
         patch.object(entrypoints, "_start_proxy", return_value=True) as start_proxy,
         patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
         patch.dict(os.environ, {"VERTEX_CLI_BIN": str(vertex_bin)}, clear=False),
@@ -151,7 +151,7 @@ def test_cli_version_does_not_print_launching_banner(tmp_path: Path) -> None:
     printed: list[str] = []
 
     with (
-        patch.object(entrypoints, "_run_wizard_if_needed") as wizard,
+        patch.object(entrypoints, "_run_auth_wizard_if_needed") as wizard,
         patch.object(entrypoints, "_start_proxy", return_value=True) as start_proxy,
         patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
         patch.dict(os.environ, {"VERTEX_CLI_BIN": str(vertex_bin)}, clear=False),
@@ -186,7 +186,7 @@ def test_cli_creates_default_vertex_settings(tmp_path: Path) -> None:
     settings_file = tmp_path / ".vertex" / "settings.json"
 
     with (
-        patch.object(entrypoints, "_run_wizard_if_needed"),
+        patch.object(entrypoints, "_run_auth_wizard_if_needed"),
         patch.object(entrypoints, "_start_proxy", return_value=True),
         patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
         patch.object(entrypoints, "VERTEX_CLI_CONFIG_DIR", settings_file.parent),
@@ -236,7 +236,7 @@ def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
     )
 
     with (
-        patch.object(entrypoints, "_run_wizard_if_needed"),
+        patch.object(entrypoints, "_run_auth_wizard_if_needed"),
         patch.object(entrypoints, "_start_proxy", return_value=True),
         patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
         patch.object(entrypoints, "VERTEX_CLI_CONFIG_DIR", settings_file.parent),
@@ -328,21 +328,25 @@ def test_start_proxy_restarts_stale_running_proxy() -> None:
     assert popen.call_args.kwargs["env"]["PORT"] == "8083"
 
 
-def test_cli_logout_updates_deepseek_key_before_auto_wizard(tmp_path: Path) -> None:
-    """`vertex /logout` updates the DeepSeek key even when the old key is empty."""
+def test_cli_logout_clears_auth(tmp_path: Path) -> None:
+    """`vertex /logout` clears Firebase auth and prints confirmation."""
     import sys
 
     from cli import entrypoints
+    from vertex_auth import client as auth_client
+    from vertex_auth.client import save_auth
 
-    env_file = tmp_path / ".config" / "vertex" / ".env"
-    env_file.parent.mkdir(parents=True)
-    env_file.write_text('DEEPSEEK_API_KEY=""\n', encoding="utf-8")
+    auth_file = tmp_path / "auth.json"
+
+    # Pre-authenticate by saving a fake token
+    with patch.object(auth_client, "AUTH_FILE", auth_file):
+        save_auth("test-id-token", "test-refresh-token", 3600, "test@example.com")
+
     printed: list[str] = []
 
     with (
-        patch.object(entrypoints, "ENV_FILE", env_file),
+        patch.object(auth_client, "AUTH_FILE", auth_file),
         patch.object(sys, "argv", ["vertex", "/logout"]),
-        patch("builtins.input", side_effect=["sk-new-deepseek"]),
         patch(
             "builtins.print",
             side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
@@ -352,80 +356,45 @@ def test_cli_logout_updates_deepseek_key_before_auto_wizard(tmp_path: Path) -> N
         entrypoints.cli()
 
     run.assert_not_called()
-    assert 'DEEPSEEK_API_KEY="sk-new-deepseek"' in env_file.read_text(encoding="utf-8")
-    assert "Chave de API atualizada." in "\n".join(printed)
+    assert not auth_file.exists()
+    assert "Logout realizado" in "\n".join(printed)
 
 
-def test_cli_auth_login_maps_to_deepseek_key_setup(tmp_path: Path) -> None:
-    """`vertex auth login` is API-key setup, not Anthropic OAuth."""
+def test_cli_auth_login_runs_setup_wizard(tmp_path: Path) -> None:
+    """`vertex auth login` runs the interactive login wizard."""
     import sys
 
     from cli import entrypoints
+    from cli.setup_wizard import run_login_wizard
 
-    env_file = tmp_path / ".config" / "vertex" / ".env"
-    env_file.parent.mkdir(parents=True)
-    env_file.write_text('DEEPSEEK_API_KEY="old"\n', encoding="utf-8")
+    printed: list[str] = []
 
     with (
-        patch.object(entrypoints, "ENV_FILE", env_file),
         patch.object(sys, "argv", ["vertex", "auth", "login"]),
-        patch("builtins.input", side_effect=["sk-deepseek-next"]),
-        patch("subprocess.run") as run,
-    ):
-        entrypoints.cli()
-
-    run.assert_not_called()
-    assert 'DEEPSEEK_API_KEY="sk-deepseek-next"' in env_file.read_text(encoding="utf-8")
-
-
-def test_cli_auth_status_reports_deepseek_key_status(tmp_path: Path) -> None:
-    """`vertex auth status` reports DeepSeek API-key status, not Anthropic auth."""
-    import sys
-
-    from cli import entrypoints
-
-    env_file = tmp_path / ".config" / "vertex" / ".env"
-    env_file.parent.mkdir(parents=True)
-    env_file.write_text(
-        'MODEL="deepseek/deepseek-v4-flash"\nDEEPSEEK_API_KEY="sk-configured"\n',
-        encoding="utf-8",
-    )
-    printed: list[str] = []
-
-    with (
-        patch.object(entrypoints, "ENV_FILE", env_file),
-        patch.object(sys, "argv", ["vertex", "auth", "status"]),
-        patch.dict(os.environ, {"MODEL": "deepseek/deepseek-v4-flash"}, clear=False),
         patch(
             "builtins.print",
             side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
         ),
+        patch("builtins.input", side_effect=["", ""]),
         patch("subprocess.run") as run,
     ):
         entrypoints.cli()
 
     run.assert_not_called()
-    assert "\n".join(printed) == "DEEPSEEK_API_KEY: configurada"
+    output = "\n".join(printed)
+    assert "Bem-vindo ao Vertex" in output
 
 
-def test_cli_auth_status_treats_logout_command_as_missing_key(tmp_path: Path) -> None:
-    """A stale command accidentally stored as the key must not count as configured."""
+def test_cli_auth_status_reports_not_authenticated(tmp_path: Path) -> None:
+    """`vertex auth status` reports not authenticated when no valid token."""
     import sys
 
     from cli import entrypoints
 
-    env_file = tmp_path / ".config" / "vertex" / ".env"
-    env_file.parent.mkdir(parents=True)
-    env_file.write_text(
-        'MODEL="deepseek/deepseek-v4-flash"\nDEEPSEEK_API_KEY="/logout"\n',
-        encoding="utf-8",
-    )
     printed: list[str] = []
 
     with (
-        patch.object(entrypoints, "ENV_FILE", env_file),
         patch.object(sys, "argv", ["vertex", "auth", "status"]),
-        patch.dict(os.environ, {"VERTEX_ENV_FILE": str(env_file)}, clear=True),
         patch(
             "builtins.print",
             side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
@@ -436,8 +405,51 @@ def test_cli_auth_status_treats_logout_command_as_missing_key(tmp_path: Path) ->
 
     run.assert_not_called()
     output = "\n".join(printed)
-    assert "DEEPSEEK_API_KEY: nao configurada" in output
-    assert "Rode `vertex auth login`" in output
+    assert "Nao autenticado" in output
+    assert "Use `vertex auth login`" in output
+
+
+def test_cli_auth_status_reports_authenticated(tmp_path: Path) -> None:
+    """`vertex auth status` reports email when authenticated."""
+    import sys
+
+    from cli import entrypoints
+    from vertex_auth import client as auth_client
+
+    auth_file = tmp_path / "auth.json"
+
+    printed: list[str] = []
+
+    with (
+        patch.object(auth_client, "AUTH_FILE", auth_file),
+        patch.object(sys, "argv", ["vertex", "auth", "status"]),
+        patch(
+            "builtins.print",
+            side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
+        ),
+        patch("subprocess.run") as run,
+    ):
+        # Pre-write auth data so the status shows as authenticated
+        import json
+        import time
+
+        auth_file.parent.mkdir(parents=True, exist_ok=True)
+        auth_file.write_text(
+            json.dumps(
+                {
+                    "id_token": "test-id-token",
+                    "refresh_token": "test-refresh-token",
+                    "expires_at": time.time() + 3600,
+                    "email": "user@example.com",
+                }
+            ),
+            encoding="utf-8",
+        )
+        entrypoints.cli()
+
+    run.assert_not_called()
+    output = "\n".join(printed)
+    assert "Autenticado como user@example.com" in output
 
 
 def test_setup_wizard_screen_is_portuguese(tmp_path: Path, capsys) -> None:
@@ -453,21 +465,23 @@ def test_setup_wizard_screen_is_portuguese(tmp_path: Path, capsys) -> None:
 
 
 def test_cli_blocks_anthropic_setup_token() -> None:
-    """The Anthropic token/OAuth setup command is not reachable through vertex."""
+    """The Anthropic token/OAuth setup command is forwarded to the vendored CLI."""
     import sys
 
     from cli import entrypoints
 
-    printed: list[str] = []
     with (
         patch.object(sys, "argv", ["vertex", "setup-token"]),
-        patch(
-            "builtins.print",
-            side_effect=lambda *a: printed.append(" ".join(str(x) for x in a)),
-        ),
+        patch.object(entrypoints, "_run_auth_wizard_if_needed"),
+        patch.object(entrypoints, "_start_proxy", return_value=True),
+        patch.object(entrypoints, "_node_bin", return_value="/usr/bin/node"),
+        patch.object(entrypoints, "_ensure_vertex_cli_settings"),
         patch("subprocess.run") as run,
+        patch("sys.exit", side_effect=SystemExit),
     ):
-        entrypoints.cli()
+        with suppress(SystemExit):
+            entrypoints.cli()
 
-    run.assert_not_called()
-    assert "Login de conta Anthropic esta desativado no Vertex." in "\n".join(printed)
+    run.assert_called_once()
+    args = run.call_args.args[0]
+    assert "setup-token" in args
