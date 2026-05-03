@@ -101,6 +101,7 @@ class AppRuntime:
                 sock.bind(("127.0.0.1", 0))
                 port = sock.getsockname()[1]
                 sock.close()
+                self.app.state.dashboard_port = port
                 dashboard_dir = os.path.join(
                     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                     "dashboard",

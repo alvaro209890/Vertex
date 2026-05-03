@@ -158,13 +158,20 @@ async def probe_root(_auth=Depends(require_api_key)):
 
 
 @router.get("/health")
-async def health(settings: Settings = Depends(get_settings)):
+async def health(
+    request: Request,
+    settings: Settings = Depends(get_settings),
+):
     """Health check endpoint."""
-    return {
+    result = {
         "status": "healthy",
         "version": _installed_vertex_version(),
         "settings_fingerprint": _settings_fingerprint(settings),
     }
+    dp = getattr(request.app.state, "dashboard_port", None)
+    if dp is not None:
+        result["dashboard_url"] = f"http://localhost:{dp}"
+    return result
 
 
 @router.api_route("/health", methods=["HEAD", "OPTIONS"])

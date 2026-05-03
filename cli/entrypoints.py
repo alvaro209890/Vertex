@@ -512,6 +512,10 @@ def cli() -> None:
     # Start proxy
     _start_proxy()
 
+    # Read dashboard URL from proxy health endpoint
+    _health = _read_proxy_health(port)
+    dashboard_url = _health.get("dashboard_url", "") if _health else ""
+
     # Set env vars for Vertex to use the proxy.
     env = os.environ.copy()
     for key in (
@@ -529,6 +533,10 @@ def cli() -> None:
     # Set NODE_OPTIONS memory limit when not user-overridden
     if "NODE_OPTIONS" not in env:
         env["NODE_OPTIONS"] = "--max-old-space-size=8192"
+
+    # Pass dashboard URL to the vendored CLI for footer display
+    if dashboard_url:
+        env["VERTEX_DASHBOARD_URL"] = dashboard_url
 
     # Launch Vertex CLI
     if not _is_version_request():
