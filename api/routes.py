@@ -34,23 +34,13 @@ AVAILABLE_MODEL_OPTIONS = [
         created_at="2024-10-22T00:00:00Z",
     ),
     ModelResponse(
-        id="deepseek/deepseek-v4-pro",
-        display_name="DeepSeek V4 Pro",
-        created_at="2026-04-29T00:00:00Z",
-    ),
-    ModelResponse(
         id="deepseek/deepseek-v4-flash",
         display_name="DeepSeek V4 Flash",
         created_at="2026-04-29T00:00:00Z",
     ),
     ModelResponse(
-        id="deepseek/deepseek-chat",
-        display_name="DeepSeek Chat (deprecated 2026/07/24)",
-        created_at="2026-04-29T00:00:00Z",
-    ),
-    ModelResponse(
-        id="deepseek/deepseek-reasoner",
-        display_name="DeepSeek Reasoner (deprecated 2026/07/24)",
+        id="deepseek/deepseek-v4-pro",
+        display_name="DeepSeek V4 Pro",
         created_at="2026-04-29T00:00:00Z",
     ),
 ]

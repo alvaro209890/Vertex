@@ -4,9 +4,8 @@ import { getUsage, recordUsage, ensureProfile } from '../db/store.js';
 export const usageRouter = Router();
 
 // Tabela de precos DeepSeek (USD por 1M tokens)
+// Modelos disponiveis: apenas v4-flash e v4-pro
 const MODEL_PRICES = {
-  'deepseek/deepseek-chat': { input: 0.27, output: 1.10 },
-  'deepseek/deepseek-reasoner': { input: 0.55, output: 2.19 },
   'deepseek/deepseek-v4-flash': { input: 0.15, output: 0.60 },
   'deepseek/deepseek-v4-pro': { input: 0.40, output: 1.50 },
 };
