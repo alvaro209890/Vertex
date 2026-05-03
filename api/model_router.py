@@ -10,6 +10,13 @@ from config.settings import Settings
 
 from .models.anthropic import MessagesRequest, TokenCountRequest
 
+_DEEPSEEK_NON_THINKING_MODELS = frozenset(
+    {
+        "deepseek-chat",
+        "deepseek-v4-flash",
+    }
+)
+
 
 @dataclass(frozen=True, slots=True)
 class ResolvedModel:
@@ -40,9 +47,13 @@ class ModelRouter:
 
     def resolve(self, claude_model_name: str) -> ResolvedModel:
         provider_model_ref = self._settings.resolve_model(claude_model_name)
-        thinking_enabled = self._settings.resolve_thinking(claude_model_name)
         provider_id = Settings.parse_provider_type(provider_model_ref)
         provider_model = Settings.parse_model_name(provider_model_ref)
+        thinking_enabled = self._resolve_provider_thinking(
+            claude_model_name,
+            provider_id=provider_id,
+            provider_model=provider_model,
+        )
         if provider_model != claude_model_name:
             logger.debug(
                 "MODEL MAPPING: '{}' -> '{}'", claude_model_name, provider_model
@@ -73,3 +84,18 @@ class ModelRouter:
             update={"model": resolved.provider_model}, deep=True
         )
         return RoutedTokenCountRequest(request=routed, resolved=resolved)
+
+    def _resolve_provider_thinking(
+        self,
+        claude_model_name: str,
+        *,
+        provider_id: str,
+        provider_model: str,
+    ) -> bool:
+        configured = self._settings.resolve_thinking(claude_model_name)
+        if (
+            provider_id == "deepseek"
+            and provider_model.lower() in _DEEPSEEK_NON_THINKING_MODELS
+        ):
+            return False
+        return configured

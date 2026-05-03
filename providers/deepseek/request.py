@@ -365,6 +365,8 @@ def build_request_body(request_data: Any, *, thinking_enabled: bool) -> dict:
         if isinstance(budget_tokens, int):
             thinking_payload["budget_tokens"] = budget_tokens
         data["thinking"] = thinking_payload
+    elif not thinking_enabled:
+        data["thinking"] = {"type": "disabled"}
 
     if "messages" in data:
         data["messages"] = _strip_reasoning_content_when_native(

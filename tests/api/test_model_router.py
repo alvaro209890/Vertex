@@ -28,7 +28,7 @@ def test_model_router_resolves_default_model(settings):
     assert resolved.provider_id == "deepseek"
     assert resolved.provider_model == "deepseek-v4-flash"
     assert resolved.provider_model_ref == "deepseek/deepseek-v4-flash"
-    assert resolved.thinking_enabled is True
+    assert resolved.thinking_enabled is False
 
 
 def test_model_router_applies_opus_override(settings):
@@ -48,10 +48,18 @@ def test_model_router_applies_opus_override(settings):
     assert request.model == "claude-opus-4-20250514"
 
 
+def test_model_router_disables_thinking_for_direct_flash(settings):
+    resolved = ModelRouter(settings).resolve("deepseek/deepseek-v4-flash")
+
+    assert resolved.provider_model == "deepseek-v4-flash"
+    assert resolved.thinking_enabled is False
+
+
 def test_model_router_resolves_per_model_thinking(settings):
     settings.enable_model_thinking = False
     settings.enable_opus_thinking = True
     settings.enable_haiku_thinking = False
+    settings.model_opus = "deepseek/deepseek-v4-pro"
 
     router = ModelRouter(settings)
 
@@ -74,6 +82,7 @@ def test_model_router_applies_haiku_override(settings):
 
     assert routed.request.model == "deepseek-chat"
     assert routed.resolved.provider_model_ref == "deepseek/deepseek-chat"
+    assert routed.resolved.thinking_enabled is False
 
 
 def test_model_router_applies_sonnet_override(settings):

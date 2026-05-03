@@ -232,7 +232,7 @@ def test_build_request_body_respects_global_thinking_disable():
         }
     )
     body = provider._build_request_body(request)
-    assert "thinking" not in body
+    assert body["thinking"] == {"type": "disabled"}
 
 
 def test_preserve_unsigned_thinking_when_thinking_on(deepseek_provider):
@@ -342,6 +342,59 @@ def test_passthrough_tool_use_and_result(deepseek_provider):
         }
     )
     body = deepseek_provider._build_request_body(request)
+    assert body["messages"][0]["content"][0]["type"] == "tool_use"
+    assert body["messages"][1]["content"][0]["type"] == "tool_result"
+
+
+def test_tool_continuation_sends_explicit_thinking_disabled_when_off():
+    provider = DeepSeekProvider(
+        ProviderConfig(
+            api_key="k",
+            base_url=DEEPSEEK_ANTHROPIC_DEFAULT_BASE,
+            rate_limit=1,
+            rate_window=1,
+            enable_thinking=False,
+        )
+    )
+    request = MessagesRequest.model_validate(
+        {
+            "model": "m",
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "t1",
+                            "name": "n",
+                            "input": {"a": 1},
+                        }
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": "t1",
+                            "content": "ok",
+                        }
+                    ],
+                },
+            ],
+            "tools": [
+                {
+                    "name": "n",
+                    "description": "test",
+                    "input_schema": {"type": "object", "properties": {}},
+                }
+            ],
+        }
+    )
+
+    body = provider._build_request_body(request)
+
+    assert body["thinking"] == {"type": "disabled"}
     assert body["messages"][0]["content"][0]["type"] == "tool_use"
     assert body["messages"][1]["content"][0]["type"] == "tool_result"
 

@@ -17,7 +17,7 @@ vertex --version
 
 </div>
 
-Current bundled Vertex CLI version: `1.1.4`.
+Current bundled Vertex CLI version: `1.2.0`.
 
 ## What You Get
 
@@ -122,7 +122,7 @@ uv run vertex auth status
 Do not commit API keys to git. After updating, Vertex ignores non-DeepSeek
 `MODEL*` values and routes chat through DeepSeek only.
 
-The expected version after this update is `1.1.4 (Vertex)`.
+The expected version after this update is `1.2.0 (Vertex)`.
 
 ## DeepSeek Only
 
@@ -277,7 +277,7 @@ MODEL="deepseek/deepseek-v4-flash"
 MODEL_OPUS="deepseek/deepseek-v4-flash"
 MODEL_SONNET="deepseek/deepseek-v4-flash"
 MODEL_HAIKU="deepseek/deepseek-v4-flash"
-ENABLE_MODEL_THINKING=true
+ENABLE_MODEL_THINKING=false
 ENABLE_OPUS_THINKING=
 ENABLE_SONNET_THINKING=
 ENABLE_HAIKU_THINKING=
