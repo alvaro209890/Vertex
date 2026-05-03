@@ -330,6 +330,42 @@ WEB_FETCH_ALLOW_PRIVATE_NETWORKS=false
 
 These tools perform outbound HTTP from the proxy. Keep private-network access disabled unless you are in a controlled lab environment.
 
+## Performance & Memory Management
+
+### JavaScript Heap Limit
+
+The bundled Vertex CLI runs on Node.js. Long sessions with large context can
+exceed the default heap limit (~2 GB) and crash with:
+
+```
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+```
+
+Vertex sets `NODE_OPTIONS="--max-old-space-size=8192"` automatically,
+raising the limit to **8 GB** to prevent OOM crashes.
+
+**How it's applied:**
+1. **`vertex` shell script** — exports `NODE_OPTIONS` with the `:-` fallback
+   syntax so any pre-existing `NODE_OPTIONS` takes precedence.
+2. **`cli/entrypoints.py`** — injects `NODE_OPTIONS` into the subprocess
+   environment only when the variable is not already set.
+
+**To override the limit** (e.g. set to 4 GB on a lower-memory machine):
+
+```bash
+export NODE_OPTIONS="--max-old-space-size=4096"
+vertex
+```
+
+**To remove the limit entirely** (not recommended):
+
+```bash
+export NODE_OPTIONS=""
+vertex
+```
+
+**To check current heap usage** inside a running session, use `/heapdump`.
+
 ## Troubleshooting
 
 ### Vertex CLI says `undefined ... input_tokens`, `$.speed`, or malformed response
