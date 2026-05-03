@@ -264,12 +264,22 @@ def test_start_proxy_reuses_matching_running_proxy() -> None:
     """A matching proxy version is reused."""
     from cli import entrypoints
 
+    expected_fingerprint = "abcdef1234567890"
     with (
         patch.object(entrypoints, "_installed_vertex_version", return_value="1.1.6"),
         patch.object(
             entrypoints,
+            "_proxy_settings_fingerprint",
+            return_value=expected_fingerprint,
+        ),
+        patch.object(
+            entrypoints,
             "_read_proxy_health",
-            return_value={"status": "healthy", "version": "1.1.6"},
+            return_value={
+                "status": "healthy",
+                "version": "1.1.6",
+                "settings_fingerprint": expected_fingerprint,
+            },
         ),
         patch.object(entrypoints, "_terminate_vertex_proxy_processes") as terminate,
         patch.object(entrypoints, "_wait_for_proxy_down") as wait_down,
@@ -286,12 +296,22 @@ def test_start_proxy_restarts_stale_running_proxy() -> None:
     """A running proxy without the installed version is terminated and replaced."""
     from cli import entrypoints
 
+    expected_fingerprint = "abcdef1234567890"
     with (
         patch.object(entrypoints, "_installed_vertex_version", return_value="1.1.6"),
         patch.object(
             entrypoints,
+            "_proxy_settings_fingerprint",
+            return_value=expected_fingerprint,
+        ),
+        patch.object(
+            entrypoints,
             "_read_proxy_health",
-            return_value={"status": "healthy", "version": "1.1.5"},
+            return_value={
+                "status": "healthy",
+                "version": "1.1.5",
+                "settings_fingerprint": expected_fingerprint,
+            },
         ),
         patch.object(
             entrypoints, "_terminate_vertex_proxy_processes", return_value=1
