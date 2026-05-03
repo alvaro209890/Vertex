@@ -1,0 +1,16 @@
+# Configuracao do Cloudflare Tunnel para Vertex API
+#
+# Instrucoes de setup:
+# 1. Autentique o cloudflared: cloudflared tunnel login
+# 2. Crie um tunel: cloudflared tunnel create vertex-api
+# 3. Substitua TUNNEL_ID abaixo pelo ID gerado
+# 4. Configure o DNS: cloudflared tunnel route dns vertex-api vertex-api.cursar.space
+# 5. Rode: cloudflared tunnel run vertex-api
+
+tunnel: TUNNEL_ID
+credentials-file: /home/server/.cloudflared/TUNNEL_ID.json
+
+ingress:
+  - hostname: vertex-api.cursar.space
+    service: http://127.0.0.1:4000
+  - service: http_status:404

@@ -22,3 +22,7 @@ debug-*.log
 .coverage
 llama_cache
 .smoke-results
+web/backend/.env
+web/node_modules/
+web/dist/
+web/backend/node_modules/

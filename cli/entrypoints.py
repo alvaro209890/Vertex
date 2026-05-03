@@ -19,22 +19,8 @@ MANAGED_VERTEX_CLI_ENV_BASE = {
     "ANTHROPIC_AUTH_TOKEN": "freecc",
     "DISABLE_LOGIN_COMMAND": "1",
 }
-API_AUTH_COMMANDS = {
-    ("auth", "login"),
-    ("auth", "logout"),
-    ("login",),
-    ("logout",),
-}
-API_AUTH_FLAGS = {"/login", "/logout", "--login", "--logout"}
-INVALID_API_KEY_COMMAND_VALUES = API_AUTH_FLAGS | {"login", "logout", "auth login"}
 
-
-def _env_value_is_set(value: str | None) -> bool:
-    """Return whether a dotenv value contains non-whitespace text."""
-    stripped = (value or "").strip()
-    if not stripped:
-        return False
-    return stripped.lower() not in INVALID_API_KEY_COMMAND_VALUES
+VERTEX_API_URL = "https://vertex-api.cursar.space"
 
 
 def _load_env_template() -> str:
@@ -133,121 +119,119 @@ def _display_model_name(model_ref: str) -> str:
     return f"{provider}: {model_name}"
 
 
-def _credential_env_for_model(model_ref: str) -> str | None:
-    """Return the credential env var required by Vertex's DeepSeek-only mode."""
-    return "DEEPSEEK_API_KEY"
+# ==================== Firebase Auth na CLI ====================
+
+GREEN = "\033[92m"
+RED = "\033[91m"
+YELLOW = "\033[93m"
+RESET = "\033[0m"
+BOLD = "\033[1m"
 
 
-def _needs_api_key() -> bool:
-    """Check whether the configured provider credential is missing or empty."""
-    values = _load_runtime_env_values()
-    model_ref = _deepseek_model_or_default(values.get("MODEL"))
-    credential_env = _credential_env_for_model(model_ref)
-    if credential_env is None:
-        return False
-    return not _env_value_is_set(values.get(credential_env))
+def _needs_auth() -> bool:
+    """Verifica se o usuario precisa fazer login."""
+    from vertex_auth import get_valid_token
+
+    return get_valid_token() is None
 
 
-def _run_wizard_if_needed() -> None:
-    """Run the setup wizard when the configured provider key is not configured."""
-    if not _needs_api_key():
+def _run_auth_wizard_if_needed() -> None:
+    """Executa o wizard de login se o usuario nao estiver autenticado."""
+    if not _needs_auth():
         return
-    from cli.setup_wizard import run_setup_wizard
+    from cli.setup_wizard import run_login_wizard
 
-    run_setup_wizard(ENV_FILE)
+    run_login_wizard()
 
 
-def _is_api_key_setup_request(argv: list[str] | None = None) -> bool:
-    """Return whether CLI args request provider API key setup."""
+def _is_auth_login_request(argv: list[str] | None = None) -> bool:
+    """Return whether CLI args request Firebase login."""
     args = list(sys.argv[1:] if argv is None else argv[1:])
     lowered = [arg.lower() for arg in args]
-    if any(arg in API_AUTH_FLAGS for arg in lowered):
-        return True
+    return tuple(lowered[:2]) == ("auth", "login") or "/login" in lowered
+
+
+def _is_logout_request(argv: list[str] | None = None) -> bool:
+    """Return whether CLI args request logout."""
+    args = list(sys.argv[1:] if argv is None else argv[1:])
+    lowered = [arg.lower() for arg in args]
     return (
-        tuple(lowered[:2]) in API_AUTH_COMMANDS
-        or tuple(lowered[:1]) in API_AUTH_COMMANDS
+        tuple(lowered[:2]) == ("auth", "logout")
+        or "/logout" in lowered
+        or lowered[:1] == ["logout"]
     )
 
 
-def _is_anthropic_token_setup_request(argv: list[str] | None = None) -> bool:
-    """Return whether args request an Anthropic-only token flow."""
-    args = list(sys.argv[1:] if argv is None else argv[1:])
-    return bool(args and args[0].lower() == "setup-token")
-
-
-def _is_api_key_status_request(argv: list[str] | None = None) -> bool:
+def _is_auth_status_request(argv: list[str] | None = None) -> bool:
     """Return whether CLI args request auth status."""
     args = list(sys.argv[1:] if argv is None else argv[1:])
     lowered = [arg.lower() for arg in args]
-    return tuple(lowered[:2]) == ("auth", "status")
+    return tuple(lowered[:2]) == ("auth", "status") or "/status" in lowered
+
+
+def _handle_auth_login_request() -> bool:
+    """Handle auth login command."""
+    if not _is_auth_login_request():
+        return False
+
+    from vertex_auth import clear_auth
+    from cli.setup_wizard import run_login_wizard
+
+    clear_auth()
+    run_login_wizard()
+    return True
+
+
+def _handle_logout_request() -> bool:
+    """Handle logout command."""
+    if not _is_logout_request():
+        return False
+
+    from vertex_auth import clear_auth
+
+    clear_auth()
+    print(f"{GREEN}✓ Logout realizado. Token removido.{RESET}")
+    print(f"  Use `vertex auth login` para autenticar novamente.")
+    return True
+
+
+def _handle_auth_status_request() -> bool:
+    """Handle auth status command."""
+    if not _is_auth_status_request():
+        return False
+
+    from vertex_auth import load_auth
+
+    auth_data = load_auth()
+    if auth_data and auth_data.get("id_token"):
+        if "--json" in sys.argv:
+            import json
+
+            print(
+                json.dumps(
+                    {"loggedIn": True, "email": auth_data.get("email", "")}, indent=2
+                )
+            )
+        else:
+            print(f"{GREEN}✓ Autenticado como {auth_data.get('email', '?')}{RESET}")
+    else:
+        if "--json" in sys.argv:
+            import json
+
+            print(json.dumps({"loggedIn": False}, indent=2))
+        else:
+            print(f"{YELLOW}Nao autenticado.{RESET}")
+            print("Use `vertex auth login` para fazer login.")
+    return True
+
+
+# ==================== Fim Firebase Auth ====================
 
 
 def _is_version_request(argv: list[str] | None = None) -> bool:
     """Return whether CLI args request only the vendored CLI version."""
     args = list(sys.argv[1:] if argv is None else argv[1:])
     return len(args) == 1 and args[0] in {"--version", "-v", "-V"}
-
-
-def _handle_api_key_setup_request(*, restart_message: bool) -> bool:
-    """Handle login/logout aliases with provider API-key setup."""
-    if not _is_api_key_setup_request():
-        return False
-
-    from cli.setup_wizard import run_setup_wizard
-
-    run_setup_wizard(ENV_FILE)
-    if restart_message:
-        print("Chave de API atualizada. Reinicie o Vertex para aplicar.")
-    else:
-        print("Chave de API atualizada.")
-    return True
-
-
-def _handle_disabled_anthropic_token_setup() -> bool:
-    """Block Anthropic OAuth token setup from the Vertex entrypoint."""
-    if not _is_anthropic_token_setup_request():
-        return False
-    print("Login de conta Anthropic esta desativado no Vertex.")
-    print(
-        "Use `vertex /logout` ou `vertex auth login` para configurar a chave DeepSeek."
-    )
-    return True
-
-
-def _handle_api_key_status_request() -> bool:
-    """Report configured provider API-key status without invoking Anthropic auth status."""
-    if not _is_api_key_status_request():
-        return False
-
-    values = _load_runtime_env_values()
-    model_ref = _deepseek_model_or_default(values.get("MODEL"))
-    provider_id = "deepseek"
-    credential_env = _credential_env_for_model(model_ref)
-    configured = credential_env is None or _env_value_is_set(values.get(credential_env))
-
-    if "--json" in sys.argv:
-        import json
-
-        print(
-            json.dumps(
-                {
-                    "loggedIn": configured,
-                    "authMethod": "provider_api_key" if configured else "none",
-                    "apiProvider": provider_id,
-                    "credentialEnv": credential_env,
-                },
-                indent=2,
-            )
-        )
-    elif configured:
-        if credential_env is None:
-            print(f"Provedor {provider_id}: nenhuma chave de API necessaria")
-        else:
-            print(f"{credential_env}: configurada")
-    else:
-        print(f"{credential_env}: nao configurada")
-        print("Rode `vertex auth login` para configurar a chave DeepSeek.")
-    return True
 
 
 def _managed_vertex_cli_env(port: str) -> dict[str, str]:
@@ -476,15 +460,55 @@ def _start_proxy() -> bool:
     return False
 
 
+def _record_usage_to_api(model: str, tokens: int) -> None:
+    """Registra uso de tokens na API remota."""
+    from vertex_auth import get_valid_token
+
+    token = get_valid_token()
+    if not token:
+        return  # silenciosamente falha se nao estiver autenticado
+
+    import json
+    import urllib.request
+
+    url = f"{VERTEX_API_URL}/usage"
+    body = json.dumps({"model": model, "tokens": tokens}).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        pass  # falha silenciosa para nao atrapalhar o usuario
+
+
 def cli() -> None:
-    """Launch Vertex CLI: ensure proxy is running, open the vendored CLI runtime."""
+    """Launch Vertex CLI: ensure auth + proxy are running, open the vendored CLI runtime."""
     import subprocess
 
-    if _handle_api_key_setup_request(restart_message=False):
+    # Comandos de autenticacao
+    if _is_version_request():
+        # Deve ser processado antes do auth para permitir --version sem login
+        vertex_cli = _vertex_cli_bin()
+        node_bin = _node_bin()
+        if vertex_cli.is_file() and node_bin:
+            proc = subprocess.run([node_bin, str(vertex_cli), *sys.argv[1:]])
+            sys.exit(proc.returncode)
+        else:
+            print(_installed_vertex_version())
+            return
+
+    if _handle_logout_request():
         return
-    if _handle_api_key_status_request():
+    if _handle_auth_login_request():
         return
-    if _handle_disabled_anthropic_token_setup():
+    if _handle_auth_status_request():
         return
 
     vertex_cli = _vertex_cli_bin()
@@ -500,21 +524,14 @@ def cli() -> None:
         print("Install Node.js 20+ and run vertex again.")
         sys.exit(1)
 
-    if _is_version_request():
-        proc = subprocess.run([node_bin, str(vertex_cli), *sys.argv[1:]])
-        sys.exit(proc.returncode)
-
-    _run_wizard_if_needed()
+    # Verifica autenticacao
+    _run_auth_wizard_if_needed()
 
     port = os.environ.get("VERTEX_PORT", "8083")
     _ensure_vertex_cli_settings(port)
 
     # Start proxy
     _start_proxy()
-
-    # Read dashboard URL from proxy health endpoint
-    _health = _read_proxy_health(port)
-    dashboard_url = _health.get("dashboard_url", "") if _health else ""
 
     # Set env vars for Vertex to use the proxy.
     env = os.environ.copy()
@@ -535,12 +552,10 @@ def cli() -> None:
         env["NODE_OPTIONS"] = "--max-old-space-size=8192"
 
     # Pass dashboard URL to the vendored CLI for footer display
-    if dashboard_url:
-        env["VERTEX_DASHBOARD_URL"] = dashboard_url
+    env["VERTEX_DASHBOARD_URL"] = f"http://localhost:{port}/dashboard"
 
     # Launch Vertex CLI
-    if not _is_version_request():
-        print("Launching Vertex CLI...")
+    print("Launching Vertex CLI...")
     try:
         proc = subprocess.run([node_bin, str(vertex_cli), *sys.argv[1:]], env=env)
         sys.exit(proc.returncode)
@@ -551,19 +566,17 @@ def cli() -> None:
 
 def serve() -> None:
     """Start the FastAPI server (registered as `vertex-proxy` script)."""
-    if _handle_api_key_setup_request(restart_message=True):
+    if _handle_logout_request():
         return
-    if _handle_api_key_status_request():
+    if _handle_auth_login_request():
         return
-    if _handle_disabled_anthropic_token_setup():
+    if _handle_auth_status_request():
         return
 
     import uvicorn
 
     from cli.process_registry import kill_all_best_effort
     from config.settings import get_settings
-
-    _run_wizard_if_needed()
 
     settings = get_settings()
     try:
@@ -591,13 +604,13 @@ def init() -> None:
     ENV_FILE.write_text(template, encoding="utf-8")
     print(f"Configuracao criada em {ENV_FILE}")
 
-    from cli.setup_wizard import run_setup_wizard
+    from cli.setup_wizard import run_login_wizard
 
-    answer = input("Configurar uma chave DeepSeek agora? [S/n]: ").strip().lower()
+    answer = input("Fazer login agora? [S/n]: ").strip().lower()
     if answer in ("", "s", "sim", "y", "yes"):
-        run_setup_wizard(ENV_FILE)
-        print("\n✓ Chave de API salva. Rode: vertex")
+        run_login_wizard()
+        print("\n✓ Login realizado. Rode: vertex")
     else:
         print(
-            "\nEdite o arquivo depois para configurar a chave DeepSeek. Depois rode: vertex"
+            "\nDepois faca login com: vertex auth login"
         )
