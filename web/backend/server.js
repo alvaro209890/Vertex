@@ -4,6 +4,7 @@ import cors from 'cors';
 import { authMiddleware } from './middleware/auth.js';
 import { meRouter } from './routes/me.js';
 import { usageRouter } from './routes/usage.js';
+import { adminRouter } from './routes/admin.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '4000', 10);
@@ -19,6 +20,9 @@ app.get('/health', (_req, res) => {
 // Rotas protegidas
 app.use('/me', authMiddleware, meRouter);
 app.use('/usage', authMiddleware, usageRouter);
+
+// Rotas admin (auth propria via token simples)
+app.use('/admin', adminRouter);
 
 app.listen(PORT, () => {
   console.log(`Vertex API rodando em http://127.0.0.1:${PORT}`);

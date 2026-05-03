@@ -1,5 +1,19 @@
 {
   "projects": {
     "default": "vertex-ad5da"
-  }
+  },
+  "targets": {
+    "vertex-ad5da": {
+      "hosting": {
+        "main": [
+          "vertex-ad5da"
+        ],
+        "admin": [
+          "vertex-ad5da",
+          "vertex-admin"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
