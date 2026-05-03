@@ -14,8 +14,7 @@ FIREBASE_SIGN_IN_URL = (
     f"?key={FIREBASE_API_KEY}"
 )
 FIREBASE_REFRESH_URL = (
-    f"https://securetoken.googleapis.com/v1/token"
-    f"?key={FIREBASE_API_KEY}"
+    f"https://securetoken.googleapis.com/v1/token?key={FIREBASE_API_KEY}"
 )
 
 
@@ -102,9 +101,7 @@ def sign_in_with_email(email, password):
         elif msg == "USER_DISABLED":
             raise ValueError("Esta conta foi desativada.")
         elif msg == "TOO_MANY_ATTEMPTS_TRY_LATER":
-            raise ValueError(
-                "Muitas tentativas de login. Tente novamente mais tarde."
-            )
+            raise ValueError("Muitas tentativas de login. Tente novamente mais tarde.")
         else:
             raise ValueError(f"Erro de autenticacao: {msg or 'desconhecido'}")
 

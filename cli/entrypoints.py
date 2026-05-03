@@ -623,6 +623,4 @@ def init() -> None:
         run_login_wizard()
         print("\n✓ Login realizado. Rode: vertex")
     else:
-        print(
-            "\nDepois faca login com: vertex auth login"
-        )
+        print("\nDepois faca login com: vertex auth login")
