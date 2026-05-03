@@ -1,83 +1,31 @@
---- vendor/vertex-cli/dist/cli.mjs	2026-05-03 13:13:31.321371900 -0300
-+++ vendor/vertex-cli/dist/cli.mjs.patched	2026-05-03 13:13:31.066067400 -0300
-@@ -162425,7 +162425,7 @@
- 
- Complete the user's search request efficiently and report your findings clearly.`;
- }
--var EXPLORE_AGENT_MIN_QUERIES = 3, EXPLORE_WHEN_TO_USE = 'Fast agent specialized for exploring codebases. Use this when you need to quickly find files by patterns (eg. "src/components/**/*.tsx"), search code for keywords (eg. "API endpoints"), or answer questions about the codebase (eg. "how do API endpoints work?"). When calling this agent, specify the desired thoroughness level: "quick" for basic searches, "medium" for moderate exploration, or "very thorough" for comprehensive analysis across multiple locations and naming conventions.', EXPLORE_AGENT;
-+var EXPLORE_AGENT_MIN_QUERIES = 3, EXPLORE_WHEN_TO_USE = 'Agente rapido especializado em explorar bases de codigo. Use quando precisar encontrar arquivos por padroes (ex: "src/components/**/*.tsx"), pesquisar codigo por palavras-chave (ex: "endpoints da API"), ou responder perguntas sobre a base de codigo (ex: "como funcionam os endpoints?"). Ao chamar este agente, especifique o nivel de profundidade: "rapido" para buscas basicas, "medio" para exploracao moderada, ou "completo" para analise abrangente em multiplos locais.', EXPLORE_AGENT;
- var init_exploreAgent = __esm(() => {
-   init_prompt2();
-   init_prompt3();
-@@ -162456,22 +162456,22 @@
- 
- ${SHARED_GUIDELINES}`;
- }
--var SHARED_PREFIX = `You are an agent for Vertex, an open-source coding agent and CLI. Given the user's message, you should use the tools available to complete the task. Complete the task fully—don't gold-plate, but don't leave it half-done.`, SHARED_GUIDELINES = `Your strengths:
--- Searching for code, configurations, and patterns across large codebases
--- Analyzing multiple files to understand system architecture
--- Investigating complex questions that require exploring many files
--- Performing multi-step research tasks
--
--Guidelines:
--- For file searches: search broadly when you don't know where something lives. Use Read when you know the specific file path.
--- For analysis: Start broad and narrow down. Use multiple search strategies if the first doesn't yield results.
--- Be thorough: Check multiple locations, consider different naming conventions, look for related files.
--- NEVER create files unless they're absolutely necessary for achieving your goal. ALWAYS prefer editing an existing file to creating a new one.
--- NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested.`, GENERAL_PURPOSE_AGENT;
-+var SHARED_PREFIX = `Voce e um agente do Vertex, um agente de codigo e CLI de codigo aberto. Dada a mensagem do usuario, use as ferramentas disponiveis para completar a tarefa. Complete a tarefa completamente — sem exageros, mas sem deixar pela metade.`, SHARED_GUIDELINES = `Seus pontos fortes:
-+- Buscar codigo, configuracoes e padroes em grandes bases de codigo
-+- Analisar multiplos arquivos para entender a arquitetura do sistema
-+- Investigar questoes complexas que exigem explorar muitos arquivos
-+- Realizar tarefas de pesquisa em multiplas etapas
-+
-+Diretrizes:
-+- Para buscas de arquivos: busque amplamente quando nao souber onde algo esta. Use Read quando souber o caminho especifico.
-+- Para analise: Comece amplo e refine. Use multiplas estrategias de busca se a primeira nao trouzer resultados.
-+- Seja completo: Verifique multiplos locais, considere diferentes convencoes de nomenclatura, procure arquivos relacionados.
-+- NUNCA crie arquivos a menos que sejam absolutamente necessarios para atingir seu objetivo. SEMPRE prefira editar um arquivo existente a criar um novo.
-+- NUNCA crie arquivos de documentacao (*.md) ou README proativamente. Crie apenas quando solicitado explicitamente.`, GENERAL_PURPOSE_AGENT;
- var init_generalPurposeAgent = __esm(() => {
-   GENERAL_PURPOSE_AGENT = {
-     agentType: "general-purpose",
--    whenToUse: "General-purpose agent for researching complex questions, searching for code, and executing multi-step tasks. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries use this agent to perform the search for you.",
-+    whenToUse: "Agente de uso geral para pesquisar questoes complexas, buscar codigo e executar tarefas de multiplas etapas. Quando estiver procurando uma palavra-chave ou arquivo e nao tiver certeza de encontrar a correspondencia certa nas primeiras tentativas, use este agente para realizar a busca para voce.",
-     tools: ["*"],
-     source: "built-in",
-     baseDir: "built-in",
-@@ -162543,7 +162543,7 @@
-   init_exploreAgent();
-   PLAN_AGENT = {
-     agentType: "Plan",
--    whenToUse: "Software architect agent for designing implementation plans. Use this when you need to plan the implementation strategy for a task. Returns step-by-step plans, identifies critical files, and considers architectural trade-offs.",
-+    whenToUse: "Agente arquiteto de software para projetar planos de implementacao. Use quando precisar planejar a estrategia de implementacao para uma tarefa. Retorna planos passo a passo, identifica arquivos criticos e considera compensacoes arquiteturais.",
-     disallowedTools: [
-       AGENT_TOOL_NAME,
-       EXIT_PLAN_MODE_TOOL_NAME,
-@@ -162698,7 +162698,7 @@
- var init_statuslineSetup = __esm(() => {
-   STATUSLINE_SETUP_AGENT = {
-     agentType: "statusline-setup",
--    whenToUse: "Use this agent to configure the user's Vertex status line setting.",
-+    whenToUse: "Use este agente para configurar a barra de status do Vertex para o usuario.",
-     tools: ["Read", "Edit"],
-     source: "built-in",
-     baseDir: "built-in",
-@@ -162851,7 +162851,7 @@
-   WORKER_AGENT = {
-     ...GENERAL_PURPOSE_AGENT,
-     agentType: "worker",
--    whenToUse: "Worker agent for coordinator mode. Executes tasks autonomously — research, implementation, or verification."
-+    whenToUse: "Agente de trabalho para modo coordenador. Executa tarefas autonomamente — pesquisa, implementacao ou verificacao."
-   };
- });
- 
-@@ -496170,7 +496170,7 @@
- 
- Old tool results will be automatically cleared from context to free up space. The ${config3.keepRecent} most recent results are always kept.`;
- }
--var getCachedMCConfigForFRC = null, DISCOVER_SKILLS_TOOL_NAME = null, SYSTEM_PROMPT_DYNAMIC_BOUNDARY = "__SYSTEM_PROMPT_DYNAMIC_BOUNDARY__", FRONTIER_MODEL_NAME = "Claude Opus 4.6", CLAUDE_4_5_OR_4_6_MODEL_IDS, DEFAULT_AGENT_PROMPT = `You are an agent for Vertex, an open-source coding agent and CLI. Given the user's message, you should use the tools available to complete the task. Complete the task fully—don't gold-plate, but don't leave it half-done. When you complete the task, respond with a concise report covering what was done and any key findings — the caller will relay this to the user, so it only needs the essentials.`, SUMMARIZE_TOOL_RESULTS_SECTION = `When working with tool results, write down any important information you might need later in your response, as the original tool result may be cleared later.`;
-+var getCachedMCConfigForFRC = null, DISCOVER_SKILLS_TOOL_NAME = null, SYSTEM_PROMPT_DYNAMIC_BOUNDARY = "__SYSTEM_PROMPT_DYNAMIC_BOUNDARY__", FRONTIER_MODEL_NAME = "Claude Opus 4.6", CLAUDE_4_5_OR_4_6_MODEL_IDS, DEFAULT_AGENT_PROMPT = `Voce e um agente do Vertex, um agente de codigo e CLI de codigo aberto. Dada a mensagem do usuario, use as ferramentas disponiveis para completar a tarefa. Complete a tarefa completamente — sem exageros, mas sem deixar pela metade. When you complete the task, respond with a concise report covering what was done and any key findings — the caller will relay this to the user, so it only needs the essentials.`, SUMMARIZE_TOOL_RESULTS_SECTION = `When working with tool results, write down any important information you might need later in your response, as the original tool result may be cleared later.`;
- var init_prompts4 = __esm(() => {
-   init_env();
-   init_git();
+--- /tmp/cli-head.mjs	2026-05-03 13:23:12.557540355 -0300
++++ /tmp/cli-patched.mjs	2026-05-03 13:23:12.469540542 -0300
+@@ -52993,15 +52993,15 @@
+       external: "acceptEdits"
+     },
+     bypassPermissions: {
+-      title: "Bypass Permissions",
+-      shortTitle: "Bypass",
++      title: "Modo Auto (bypass)",
++      shortTitle: "Auto",
+       symbol: "⏵⏵",
+       color: "error",
+       external: "bypassPermissions"
+     },
+     dontAsk: {
+-      title: "Don't Ask",
+-      shortTitle: "DontAsk",
++      title: "Nao Perguntar",
++      shortTitle: "NaoPerguntar",
+       symbol: "⏵⏵",
+       color: "error",
+       external: "dontAsk"
+@@ -54420,7 +54420,7 @@
+     {
+       matches: (ctx) => ctx.path === "permissions.defaultMode" && ctx.code === "invalid_value",
+       tip: {
+-        suggestion: 'Valid modes: "acceptEdits" (ask before file changes), "plan" (analysis only), "bypassPermissions" (auto-accept all), or "default" (standard behavior)'
++        suggestion: 'Valid modes: "acceptEdits" (perguntar antes de alterar), "plan" (analise apenas), "bypassPermissions" (auto aceitar tudo), ou "default" (padrao)'
+       }
+     },
+     {
