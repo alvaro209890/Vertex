@@ -122,6 +122,7 @@ class ClaudeProxyService:
                         ),
                         model=routed.resolved.provider_model_ref,
                         input_tokens=input_tokens,
+                        request_id=f"webtool_{uuid.uuid4().hex[:12]}",
                     )
                 )
 
@@ -168,6 +169,7 @@ class ClaudeProxyService:
                     ),
                     model=routed.resolved.provider_model_ref,
                     input_tokens=input_tokens,
+                    request_id=request_id,
                 )
             )
 

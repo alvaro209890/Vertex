@@ -173,8 +173,7 @@ def test_cli_version_does_not_print_launching_banner(tmp_path: Path) -> None:
 
 
 def test_cli_creates_default_vertex_settings(tmp_path: Path) -> None:
-    """cli() creates ~/.vertex/settings.json defaults when missing."""
-    import json
+    """cli() connects to remote server by default (no local proxy)."""
     import sys
 
     from cli import entrypoints
@@ -187,7 +186,7 @@ def test_cli_creates_default_vertex_settings(tmp_path: Path) -> None:
 
     with (
         patch.object(entrypoints, "_run_auth_wizard_if_needed"),
-        patch.object(entrypoints, "_start_proxy", return_value=True),
+        patch.object(entrypoints, "_ensure_remote_account_active"),
         patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
         patch.object(entrypoints, "VERTEX_CLI_CONFIG_DIR", settings_file.parent),
         patch.object(entrypoints, "VERTEX_CLI_SETTINGS_FILE", settings_file),
@@ -200,15 +199,51 @@ def test_cli_creates_default_vertex_settings(tmp_path: Path) -> None:
         run.return_value.returncode = 0
         entrypoints.cli()
 
-    settings = json.loads(settings_file.read_text(encoding="utf-8"))
-    assert settings["env"]["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:8083"
-    assert settings["env"]["ANTHROPIC_AUTH_TOKEN"] == "freecc"
-    assert settings["env"]["DISABLE_LOGIN_COMMAND"] == "1"
-    assert settings["skipDangerousModePermissionPrompt"] is True
+    # Modo remoto padrao: usa VERTEX_API_URL, nao inicia proxy local
+    env = run.call_args.kwargs["env"]
+    assert env["ANTHROPIC_BASE_URL"] == entrypoints.VERTEX_API_URL
+    assert env["ANTHROPIC_AUTH_TOKEN"] == "freecc"
+
+
+def test_cli_local_proxy_mode(tmp_path: Path) -> None:
+    """VERTEX_LOCAL_PROXY=true usa proxy local."""
+    import sys
+
+    from cli import entrypoints
+
+    vertex_bin = tmp_path / "vertex"
+    vertex_bin.write_text("#!/usr/bin/env node\n", encoding="utf-8")
+    node_bin = tmp_path / "node"
+    node_bin.write_text("", encoding="utf-8")
+    settings_file = tmp_path / ".vertex" / "settings.json"
+
+    with (
+        patch.object(entrypoints, "_run_auth_wizard_if_needed"),
+        patch.object(entrypoints, "_ensure_remote_account_active"),
+        patch.object(entrypoints, "_start_proxy", return_value=True),
+        patch.object(entrypoints, "_ensure_vertex_cli_settings"),
+        patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
+        patch.object(entrypoints, "VERTEX_CLI_CONFIG_DIR", settings_file.parent),
+        patch.object(entrypoints, "VERTEX_CLI_SETTINGS_FILE", settings_file),
+        patch.dict(
+            os.environ,
+            {"VERTEX_CLI_BIN": str(vertex_bin), "VERTEX_LOCAL_PROXY": "true"},
+            clear=False,
+        ),
+        patch.object(sys, "argv", ["vertex"]),
+        patch("subprocess.run") as run,
+        patch("sys.exit", side_effect=SystemExit),
+        suppress(SystemExit),
+    ):
+        run.return_value.returncode = 0
+        entrypoints.cli()
+
+    env = run.call_args.kwargs["env"]
+    assert "127.0.0.1" in env["ANTHROPIC_BASE_URL"]
 
 
 def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
-    """cli() forces managed Vertex settings over stale provider config."""
+    """cli remote mode uses VERTEX_API_URL regardless of stale settings file."""
     import json
     import sys
 
@@ -237,7 +272,7 @@ def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
 
     with (
         patch.object(entrypoints, "_run_auth_wizard_if_needed"),
-        patch.object(entrypoints, "_start_proxy", return_value=True),
+        patch.object(entrypoints, "_ensure_remote_account_active"),
         patch.object(entrypoints, "_node_bin", return_value=str(node_bin)),
         patch.object(entrypoints, "VERTEX_CLI_CONFIG_DIR", settings_file.parent),
         patch.object(entrypoints, "VERTEX_CLI_SETTINGS_FILE", settings_file),
@@ -250,14 +285,11 @@ def test_cli_overwrites_stale_openclaude_settings(tmp_path: Path) -> None:
         run.return_value.returncode = 0
         entrypoints.cli()
 
-    settings = json.loads(settings_file.read_text(encoding="utf-8"))
-    assert settings["env"]["ANTHROPIC_BASE_URL"] == "http://127.0.0.1:8083"
-    assert settings["env"]["ANTHROPIC_AUTH_TOKEN"] == "freecc"
-    assert settings["env"]["DISABLE_LOGIN_COMMAND"] == "1"
-    assert "OPENAI_API_KEY" not in settings["env"]
-    assert settings["model"] == "deepseek/deepseek-v4-flash"
-    assert settings["customSetting"] is True
-    assert "provider" not in settings
+    # Modo remoto: usa VERTEX_API_URL diretamente nas env vars do subprocess
+    env = run.call_args.kwargs["env"]
+    assert env["ANTHROPIC_BASE_URL"] == entrypoints.VERTEX_API_URL
+    assert env["ANTHROPIC_AUTH_TOKEN"] == "freecc"
+    assert env["DISABLE_LOGIN_COMMAND"] == "1"
 
 
 def test_start_proxy_reuses_matching_running_proxy() -> None:
@@ -389,10 +421,13 @@ def test_cli_auth_status_reports_not_authenticated(tmp_path: Path) -> None:
     import sys
 
     from cli import entrypoints
+    from vertex_auth import client as auth_client
 
+    auth_file = tmp_path / "auth.json"
     printed: list[str] = []
 
     with (
+        patch.object(auth_client, "AUTH_FILE", auth_file),
         patch.object(sys, "argv", ["vertex", "auth", "status"]),
         patch(
             "builtins.print",
@@ -472,6 +507,7 @@ def test_cli_blocks_anthropic_setup_token() -> None:
     with (
         patch.object(sys, "argv", ["vertex", "setup-token"]),
         patch.object(entrypoints, "_run_auth_wizard_if_needed"),
+        patch.object(entrypoints, "_ensure_remote_account_active"),
         patch.object(entrypoints, "_start_proxy", return_value=True),
         patch.object(entrypoints, "_node_bin", return_value="/usr/bin/node"),
         patch.object(entrypoints, "_ensure_vertex_cli_settings"),

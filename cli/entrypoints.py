@@ -165,15 +165,23 @@ def _ensure_remote_account_active() -> None:
         urllib.request.urlopen(req, timeout=10).close()
     except urllib.error.HTTPError as exc:
         if exc.code == 403:
-            print(f"{RED}Conta bloqueada. Fale com o suporte para reativar o acesso.{RESET}")
+            print(
+                f"{RED}Conta bloqueada. Fale com o suporte para reativar o acesso.{RESET}"
+            )
             sys.exit(1)
         if exc.code == 401:
             clear_auth()
-            print(f"{YELLOW}Sessao expirada. Faca login novamente com `vertex auth login`.{RESET}")
+            print(
+                f"{YELLOW}Sessao expirada. Faca login novamente com `vertex auth login`.{RESET}"
+            )
             sys.exit(1)
-        print(f"{YELLOW}Aviso: nao foi possivel confirmar o status da conta ({exc.code}).{RESET}")
+        print(
+            f"{YELLOW}Aviso: nao foi possivel confirmar o status da conta ({exc.code}).{RESET}"
+        )
     except Exception:
-        print(f"{YELLOW}Aviso: nao foi possivel confirmar o status da conta agora.{RESET}")
+        print(
+            f"{YELLOW}Aviso: nao foi possivel confirmar o status da conta agora.{RESET}"
+        )
 
 
 def _is_auth_login_request(argv: list[str] | None = None) -> bool:
@@ -530,8 +538,18 @@ def _record_usage_to_api(model: str, tokens: int) -> None:
         urllib.request.urlopen(req, timeout=5)
 
 
+def _is_local_proxy_requested() -> bool:
+    """Return True when the user explicitly requests the local proxy mode."""
+    return os.environ.get("VERTEX_LOCAL_PROXY") == "true"
+
+
 def cli() -> None:
-    """Launch Vertex CLI: ensure auth + proxy are running, open the vendored CLI runtime."""
+    """Launch Vertex CLI: ensure auth + proxy are running, open the vendored CLI runtime.
+
+    Comportamento:
+      - Padrão: modo remoto (conecta ao servidor vertex-api.cursar.space)
+      - VERTEX_LOCAL_PROXY=true: modo local (inicia proxy na máquina do usuário)
+    """
     import subprocess
 
     # Comandos de autenticacao
@@ -570,13 +588,7 @@ def cli() -> None:
     _run_auth_wizard_if_needed()
     _ensure_remote_account_active()
 
-    port = os.environ.get("VERTEX_PORT", "8083")
-    _ensure_vertex_cli_settings(port)
-
-    # Start proxy
-    _start_proxy()
-
-    # Set env vars for Vertex to use the proxy.
+    # Decide modo: remoto (padrão) vs local
     env = os.environ.copy()
     for key in (
         "CLAUDE_CODE_USE_OPENAI",
@@ -588,14 +600,49 @@ def cli() -> None:
     ):
         env.pop(key, None)
     env["CLAUDE_CONFIG_DIR"] = str(VERTEX_CLI_CONFIG_DIR)
-    env.update(_managed_vertex_cli_env(port))
+
+    if _is_local_proxy_requested():
+        # ─── Modo local (proxy na máquina do usuário) ───
+        port = os.environ.get("VERTEX_PORT", "8083")
+        _ensure_vertex_cli_settings(port)
+        _start_proxy()
+        env.update(_managed_vertex_cli_env(port))
+        env["VERTEX_DASHBOARD_URL"] = f"http://localhost:{port}/dashboard"
+    else:
+        # ─── Modo remoto (padrão) ───
+        import json
+
+        print("Conectando ao servidor Vertex...")
+        env["ANTHROPIC_BASE_URL"] = VERTEX_API_URL
+        env["ANTHROPIC_AUTH_TOKEN"] = "freecc"
+        env["DISABLE_LOGIN_COMMAND"] = "1"
+
+        # Modelos remotos (o servidor faz o roteamento)
+        models = _configured_model_values()
+        env["ANTHROPIC_DEFAULT_OPUS_MODEL"] = models["opus"]
+        env["ANTHROPIC_DEFAULT_OPUS_MODEL_NAME"] = _display_model_name(models["opus"])
+        env["ANTHROPIC_DEFAULT_SONNET_MODEL"] = models["sonnet"]
+        env["ANTHROPIC_DEFAULT_SONNET_MODEL_NAME"] = _display_model_name(
+            models["sonnet"]
+        )
+        env["ANTHROPIC_DEFAULT_HAIKU_MODEL"] = models["haiku"]
+        env["ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME"] = _display_model_name(models["haiku"])
+
+        # Modelos disponíveis no picker
+        unique_models: list[str] = []
+        for m in (models["opus"], models["sonnet"], models["haiku"], models["default"]):
+            if m and m not in unique_models:
+                unique_models.append(m)
+        for known in ("deepseek/deepseek-v4-flash", "deepseek/deepseek-v4-pro"):
+            if known not in unique_models:
+                unique_models.append(known)
+        env["OPENCLAUDE_EXTRA_MODEL_OPTIONS"] = json.dumps(unique_models)
+
+        env["VERTEX_DASHBOARD_URL"] = VERTEX_API_URL
 
     # Set NODE_OPTIONS memory limit when not user-overridden
     if "NODE_OPTIONS" not in env:
         env["NODE_OPTIONS"] = "--max-old-space-size=8192"
-
-    # Pass dashboard URL to the vendored CLI for footer display
-    env["VERTEX_DASHBOARD_URL"] = f"http://localhost:{port}/dashboard"
 
     # Launch Vertex CLI
     print("Launching Vertex CLI...")
@@ -616,10 +663,17 @@ def serve() -> None:
     if _handle_auth_status_request():
         return
 
-    import uvicorn
+    try:
+        from cli.process_registry import kill_all_best_effort
+        from config.settings import get_settings
+    except ImportError:
+        print(
+            "Erro: O modo servidor requer dependencias adicionais.\n"
+            "Instale com: pip install vertex-deepseek[server]"
+        )
+        sys.exit(1)
 
-    from cli.process_registry import kill_all_best_effort
-    from config.settings import get_settings
+    import uvicorn
 
     settings = get_settings()
     try:

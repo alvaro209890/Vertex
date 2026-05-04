@@ -371,6 +371,23 @@ body {
   font-size: 13px;
 }
 
+.live-badge {
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 5px 10px;
+  text-transform: uppercase;
+}
+
+.live-badge.supabase {
+  border-color: var(--green-500);
+  color: var(--green-400);
+  box-shadow: 0 0 16px var(--green-glow);
+}
+
 .logout-btn {
   background: transparent;
   border: 1px solid var(--border-light);
@@ -434,6 +451,10 @@ body {
   margin-bottom: 24px;
 }
 
+.dashboard-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .total-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -470,11 +491,25 @@ body {
   color: var(--green-400);
 }
 
+.total-value.save {
+  color: #ffb74d;
+}
+
+.total-detail {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 8px;
+}
+
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 24px;
+}
+
+.recent-card {
+  margin-top: 24px;
 }
 
 .card h2 {
@@ -633,6 +668,10 @@ tfoot td {
 
 @media (max-width: 640px) {
   .totals-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-metrics {
     grid-template-columns: 1fr;
   }
 

@@ -1,5 +1,7 @@
 """FastAPI route handlers."""
 
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from loguru import logger
 
@@ -8,13 +10,18 @@ from config.settings import Settings
 from core.anthropic import get_token_count
 
 from . import dependencies
-from .dependencies import get_settings, require_api_key
+from .dependencies import get_settings, require_api_key, require_firebase_auth
 from .models.anthropic import MessagesRequest, TokenCountRequest
 from .models.responses import ModelResponse, ModelsListResponse
 from .services import ClaudeProxyService
 
 router = APIRouter()
 PACKAGE_NAME = "vertex-deepseek"
+
+# Escolhe o auth dependency baseado no ambiente
+# VERTEX_REMOTE=1 no servidor usa Firebase JWT; local usa API key
+_USE_FIREBASE_AUTH = os.environ.get("VERTEX_REMOTE") == "1"
+_auth_dependency = require_firebase_auth if _USE_FIREBASE_AUTH else require_api_key
 
 
 AVAILABLE_MODEL_OPTIONS = [
@@ -101,14 +108,14 @@ def _settings_fingerprint(settings: Settings) -> str:
 async def create_message(
     request_data: MessagesRequest,
     service: ClaudeProxyService = Depends(get_proxy_service),
-    _auth=Depends(require_api_key),
+    _auth=Depends(_auth_dependency),
 ):
     """Create a message (always streaming)."""
     return service.create_message(request_data)
 
 
 @router.api_route("/v1/messages", methods=["HEAD", "OPTIONS"])
-async def probe_messages(_auth=Depends(require_api_key)):
+async def probe_messages(_auth=Depends(_auth_dependency)):
     """Respond to Claude compatibility probes for the messages endpoint."""
     return _probe_response("POST, HEAD, OPTIONS")
 
@@ -117,21 +124,21 @@ async def probe_messages(_auth=Depends(require_api_key)):
 async def count_tokens(
     request_data: TokenCountRequest,
     service: ClaudeProxyService = Depends(get_proxy_service),
-    _auth=Depends(require_api_key),
+    _auth=Depends(_auth_dependency),
 ):
     """Count tokens for a request."""
     return service.count_tokens(request_data)
 
 
 @router.api_route("/v1/messages/count_tokens", methods=["HEAD", "OPTIONS"])
-async def probe_count_tokens(_auth=Depends(require_api_key)):
+async def probe_count_tokens(_auth=Depends(_auth_dependency)):
     """Respond to Claude compatibility probes for the token count endpoint."""
     return _probe_response("POST, HEAD, OPTIONS")
 
 
 @router.get("/")
 async def root(
-    settings: Settings = Depends(get_settings), _auth=Depends(require_api_key)
+    settings: Settings = Depends(get_settings), _auth=Depends(_auth_dependency)
 ):
     """Root endpoint."""
     return {
@@ -142,7 +149,7 @@ async def root(
 
 
 @router.api_route("/", methods=["HEAD", "OPTIONS"])
-async def probe_root(_auth=Depends(require_api_key)):
+async def probe_root(_auth=Depends(_auth_dependency)):
     """Respond to compatibility probes for the root endpoint."""
     return _probe_response("GET, HEAD, OPTIONS")
 
@@ -171,7 +178,7 @@ async def probe_health():
 
 
 @router.get("/v1/models", response_model=ModelsListResponse)
-async def list_models(_auth=Depends(require_api_key)):
+async def list_models(_auth=Depends(_auth_dependency)):
     """List model ids this proxy can route."""
     return ModelsListResponse(
         data=AVAILABLE_MODEL_OPTIONS,
@@ -182,7 +189,7 @@ async def list_models(_auth=Depends(require_api_key)):
 
 
 @router.post("/stop")
-async def stop_cli(request: Request, _auth=Depends(require_api_key)):
+async def stop_cli(request: Request, _auth=Depends(_auth_dependency)):
     """Stop all CLI sessions and pending tasks."""
     handler = getattr(request.app.state, "message_handler", None)
     if not handler:

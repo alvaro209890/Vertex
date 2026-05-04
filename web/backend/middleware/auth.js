@@ -121,7 +121,11 @@ export async function authMiddleware(req, res, next) {
     req.user = { uid: decoded.uid, email: decoded.email || '' };
     await ensureProfile(req.user.uid, req.user.email);
     if (await isBlocked(req.user.uid)) {
-      return res.status(403).json({ error: 'Conta bloqueada' });
+      return res.status(403).json({
+        code: 'account_blocked',
+        error: 'Conta bloqueada',
+        message: 'Conta bloqueada. Fale com o suporte.',
+      });
     }
     next();
   } catch (err) {

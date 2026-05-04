@@ -65,7 +65,7 @@ mkdir -p "$SETTINGS_DIR"
 cat > "$SETTINGS_FILE" << 'JSONEOF'
 {
   "env": {
-    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8083",
+    "ANTHROPIC_BASE_URL": "https://vertex-api.cursar.space",
     "ANTHROPIC_AUTH_TOKEN": "freecc",
     "DISABLE_LOGIN_COMMAND": "1",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek/deepseek-v4-flash",
@@ -79,7 +79,8 @@ cat > "$SETTINGS_FILE" << 'JSONEOF'
   "model": "deepseek/deepseek-v4-flash"
 }
 JSONEOF
-echo "Configuracao gravada para DeepSeek"
+echo "Configuracao gravada para servidor remoto (vertex-api.cursar.space)"
+echo "Nota: Nao e mais necessario configurar DEEPSEEK_API_KEY manualmente."
 
 echo ""
 echo -e "${GREEN}======================================================${RESET}"
@@ -87,10 +88,13 @@ echo -e "${GREEN}  ✅ Vertex instalado com sucesso!${RESET}"
 echo -e "${GREEN}======================================================${RESET}"
 echo ""
 echo -e "  ${BOLD}Comandos:${RESET}"
-echo -e "    ${GREEN}vertex${RESET}          — Abre a CLI do Vertex (já conectado ao proxy)"
-echo -e "    ${GREEN}vertex /logout${RESET} — Trocar a chave DeepSeek"
+echo -e "    ${GREEN}vertex${RESET}          — Abre a CLI do Vertex (conectado ao servidor)"
+echo -e "    ${GREEN}vertex /logout${RESET} — Fazer logout"
 echo ""
 echo -e "  ${BOLD}Primeiro uso:${RESET}"
 echo -e "    Feche e abra o terminal, ou rode: source ~/.bashrc"
 echo -e "    Depois: ${GREEN}vertex${RESET}"
+echo -e ""
+echo -e "  ${BOLD}Modo local (opcional):${RESET}"
+echo -e "    ${GREEN}VERTEX_LOCAL_PROXY=true vertex${RESET} — Usar proxy local"
 echo ""

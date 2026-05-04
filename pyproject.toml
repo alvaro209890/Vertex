@@ -24,19 +24,32 @@ classifiers = [
     "Topic :: Software Development :: Build Tools",
 ]
 dependencies = [
+    "httpx>=0.28.1",
+    "python-dotenv>=1.2.2",
+    "loguru>=0.7.0",
+    "pyjwt>=2.10.0",
+    "cryptography>=44.0.0",
+]
+
+[project.optional-dependencies]
+server = [
     "fastapi[standard]>=0.136.1",
     "uvicorn>=0.46.0",
     "httpx[socks]>=0.28.1",
     "markdown-it-py>=3.0.0",
     "pydantic>=2.13.3",
-    "python-dotenv>=1.2.2",
     "tiktoken>=0.7.0",
     "python-telegram-bot>=22.7",
     "discord.py>=2.7.1",
     "pydantic-settings>=2.14.0",
     "openai>=2.32.0",
-    "loguru>=0.7.0",
     "aiohttp>=3.13.4",
+]
+voice_local = [
+    "torch>=2.11.0",
+    "transformers>=5.6.2",
+    "accelerate>=1.13.0",
+    "librosa>=0.10.0",
 ]
 
 [project.urls]
@@ -49,20 +62,12 @@ vertex = "cli.entrypoints:cli"
 vertex-proxy = "cli.entrypoints:serve"
 vertex-init = "cli.entrypoints:init"
 
-[project.optional-dependencies]
-voice_local = [
-    "torch>=2.11.0",
-    "transformers>=5.6.2",
-    "accelerate>=1.13.0",
-    "librosa>=0.10.0",
-]
 
 [tool.hatch.build.targets.wheel]
-packages = ["api", "cli", "config", "core", "messaging", "providers", "vertex_auth"]
+packages = ["cli", "vertex_auth"]
 
 [tool.hatch.build.targets.wheel.force-include]
 ".env.example" = "cli/env.example"
-"vertex_proxy.py" = "vertex_proxy.py"
 "vendor/vertex-cli" = "vendor/vertex-cli"
 
 [tool.uv.sources]
@@ -107,7 +112,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["api", "cli", "config", "core", "messaging", "providers", "smoke"]
+known-first-party = ["cli", "vertex_auth", "smoke"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -136,4 +141,8 @@ python-version = "3.14"
 
 [tool.ty.analysis]
 # Optional voice_local extra: torch, transformers, librosa for local whisper transcription
-allowed-unresolved-imports = ["torch", "transformers", "librosa"]
+allowed-unresolved-imports = [
+    "torch", "transformers", "librosa",
+    # Server-side packages — only needed when running from source
+    "api", "config", "core", "messaging", "providers",
+]

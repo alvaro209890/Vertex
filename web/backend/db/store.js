@@ -1,9 +1,22 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
-import { emptyModelUsage, normalizeUsageDelta } from '../lib/pricing.js';
+import {
+  calculateModelCost,
+  emptyModelUsage,
+  normalizeUsageDelta,
+  parseUsdToBrl,
+} from '../lib/pricing.js';
+import {
+  isSupabaseUsageEnabled,
+  listConsumptionEvents,
+  resetConsumptionEvents,
+  upsertConsumptionEvent,
+  usageFromConsumptionRows,
+} from './supabaseStore.js';
 
 const DB_PATH = process.env.DB_PATH || '/media/server/HD Backup/Servidores_NAO_MEXA/Banco_de_dados/vertex';
+const MAX_USAGE_HISTORY_EVENTS = 5000;
 
 async function ensureUserDir(uid) {
   const userDir = join(DB_PATH, uid);
@@ -59,14 +72,60 @@ export async function isBlocked(uid) {
 // --- Usage ---
 
 export async function getUsage(uid) {
+  if (isSupabaseUsageEnabled()) {
+    const rows = await listConsumptionEvents(uid);
+    return usageFromConsumptionRows(rows);
+  }
   const data = await readJSON(uid, 'usage.json');
   return data || { models: {} };
 }
 
-export async function recordUsage(uid, usageDelta) {
+function usageTimestamp(rawTimestamp) {
+  const date = rawTimestamp ? new Date(rawTimestamp) : new Date();
+  return Number.isFinite(date.getTime()) ? date.toISOString() : new Date().toISOString();
+}
+
+export async function recordUsage(uid, usageDelta, email = '') {
   const delta = normalizeUsageDelta(usageDelta);
   if (!delta.model || delta.totalTokens <= 0) {
     throw new Error('Uso invalido: envie model e pelo menos um contador de tokens positivo');
+  }
+
+  const timestamp = usageTimestamp(usageDelta.timestamp);
+  const usdToBrl = parseUsdToBrl(process.env.USD_TO_BRL);
+  const eventCost = calculateModelCost(delta.model, {
+    inputTokens: delta.inputTokens,
+    outputTokens: delta.outputTokens,
+    cacheReadInputTokens: delta.cacheReadInputTokens,
+    cacheCreationInputTokens: delta.cacheCreationInputTokens,
+    promptCacheHitTokens: delta.promptCacheHitTokens,
+    promptCacheMissTokens: delta.promptCacheMissTokens,
+    completionTokens: delta.completionTokens,
+    legacyTokens: delta.legacyTokens,
+  }, usdToBrl);
+  const event = {
+    timestamp,
+    requestId: delta.requestId,
+    model: delta.model,
+    inputTokens: delta.inputTokens,
+    outputTokens: delta.outputTokens,
+    cacheReadInputTokens: delta.cacheReadInputTokens,
+    cacheCreationInputTokens: delta.cacheCreationInputTokens,
+    promptCacheHitTokens: delta.promptCacheHitTokens,
+    promptCacheMissTokens: delta.promptCacheMissTokens,
+    completionTokens: delta.completionTokens,
+    legacyTokens: delta.legacyTokens,
+    tokens: delta.totalTokens,
+    costUsd: eventCost.costUsd,
+    costBrl: eventCost.costBrl,
+    usdToBrl,
+    source: usageDelta.source || 'vertex-proxy',
+  };
+
+  if (isSupabaseUsageEnabled()) {
+    await upsertConsumptionEvent(uid, email, event);
+    const rows = await listConsumptionEvents(uid);
+    return usageFromConsumptionRows(rows);
   }
 
   const data = await getUsage(uid);
@@ -80,15 +139,75 @@ export async function recordUsage(uid, usageDelta) {
     (current.cacheReadInputTokens || 0) + delta.cacheReadInputTokens;
   current.cacheCreationInputTokens =
     (current.cacheCreationInputTokens || 0) + delta.cacheCreationInputTokens;
+  current.promptCacheHitTokens =
+    (current.promptCacheHitTokens || 0) + delta.promptCacheHitTokens;
+  current.promptCacheMissTokens =
+    (current.promptCacheMissTokens || 0) + delta.promptCacheMissTokens;
+  current.completionTokens =
+    (current.completionTokens || 0) + delta.completionTokens;
   current.legacyTokens = (current.legacyTokens || 0) + delta.legacyTokens;
   current.tokens =
-    current.inputTokens +
-    current.outputTokens +
-    current.cacheReadInputTokens +
-    current.cacheCreationInputTokens +
+    current.promptCacheMissTokens +
+    current.promptCacheHitTokens +
+    current.completionTokens +
     current.legacyTokens;
-  current.lastUsed = usageDelta.timestamp || new Date().toISOString();
+  current.lastUsed = timestamp;
   data.models[delta.model] = current;
+  data.history = Array.isArray(data.history) ? data.history : [];
+  const existingIndex = event.requestId
+    ? data.history.findIndex((item) => item?.requestId === event.requestId)
+    : -1;
+  if (existingIndex >= 0) {
+    const existing = data.history[existingIndex];
+    const merged = {
+      ...existing,
+      timestamp,
+      inputTokens: (existing.inputTokens || 0) + event.inputTokens,
+      outputTokens: (existing.outputTokens || 0) + event.outputTokens,
+      cacheReadInputTokens:
+        (existing.cacheReadInputTokens || 0) + event.cacheReadInputTokens,
+      cacheCreationInputTokens:
+        (existing.cacheCreationInputTokens || 0) + event.cacheCreationInputTokens,
+      promptCacheHitTokens:
+        (existing.promptCacheHitTokens || 0) + event.promptCacheHitTokens,
+      promptCacheMissTokens:
+        (existing.promptCacheMissTokens || 0) + event.promptCacheMissTokens,
+      completionTokens: (existing.completionTokens || 0) + event.completionTokens,
+      legacyTokens: (existing.legacyTokens || 0) + event.legacyTokens,
+      tokens: (existing.tokens || 0) + event.tokens,
+      costUsd: Number(((existing.costUsd || 0) + event.costUsd).toFixed(8)),
+      costBrl: Number(((existing.costBrl || 0) + event.costBrl).toFixed(4)),
+      source: event.source,
+    };
+    data.history[existingIndex] = merged;
+  } else {
+    data.history.push(event);
+  }
+  if (data.history.length > MAX_USAGE_HISTORY_EVENTS) {
+    data.history = data.history.slice(-MAX_USAGE_HISTORY_EVENTS);
+  }
+  data.updatedAt = timestamp;
+  data.version = 3;
   await writeJSON(uid, 'usage.json', data);
   return data;
+}
+
+export async function resetAllUsage() {
+  if (isSupabaseUsageEnabled()) {
+    await resetConsumptionEvents();
+  }
+  if (!existsSync(DB_PATH)) return 0;
+  const dirs = await readdir(DB_PATH, { withFileTypes: true });
+  let count = 0;
+  for (const dir of dirs) {
+    if (!dir.isDirectory()) continue;
+    await writeJSON(dir.name, 'usage.json', {
+      models: {},
+      history: [],
+      updatedAt: new Date().toISOString(),
+      version: 3,
+    });
+    count += 1;
+  }
+  return count;
 }
