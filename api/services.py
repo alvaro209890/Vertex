@@ -12,6 +12,7 @@ from fastapi.responses import StreamingResponse
 from loguru import logger
 
 from api.metrics import metrics_store
+from api.usage_reporting import stream_with_usage_reporting
 from config.settings import Settings
 from core.anthropic import get_token_count, get_user_facing_error_message
 from core.anthropic.sse import ANTHROPIC_SSE_RESPONSE_HEADERS
@@ -112,12 +113,16 @@ class ClaudeProxyService:
                     allowed_schemes=self._settings.web_fetch_allowed_scheme_set(),
                 )
                 return anthropic_sse_streaming_response(
-                    stream_web_server_tool_response(
-                        routed.request,
+                    stream_with_usage_reporting(
+                        stream_web_server_tool_response(
+                            routed.request,
+                            input_tokens=input_tokens,
+                            web_fetch_egress=egress,
+                            verbose_client_errors=self._settings.log_api_error_tracebacks,
+                        ),
+                        model=routed.resolved.provider_model_ref,
                         input_tokens=input_tokens,
-                        web_fetch_egress=egress,
-                        verbose_client_errors=self._settings.log_api_error_tracebacks,
-                    ),
+                    )
                 )
 
             optimized = try_optimizations(routed.request, self._settings)
@@ -154,12 +159,16 @@ class ClaudeProxyService:
             metrics_store.record_tokens(session_id, input_tokens)
 
             return anthropic_sse_streaming_response(
-                provider.stream_response(
-                    routed.request,
+                stream_with_usage_reporting(
+                    provider.stream_response(
+                        routed.request,
+                        input_tokens=input_tokens,
+                        request_id=request_id,
+                        thinking_enabled=routed.resolved.thinking_enabled,
+                    ),
+                    model=routed.resolved.provider_model_ref,
                     input_tokens=input_tokens,
-                    request_id=request_id,
-                    thinking_enabled=routed.resolved.thinking_enabled,
-                ),
+                )
             )
 
         except ProviderError:

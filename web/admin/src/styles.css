@@ -227,7 +227,7 @@ body {
 
 .metrics-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 14px;
   margin-bottom: 24px;
 }
@@ -256,6 +256,7 @@ body {
 
 .metric-value.active { color: var(--green); }
 .metric-value.blocked { color: var(--red); }
+.metric-value.cost { color: var(--blue); }
 
 .card {
   background: var(--card);

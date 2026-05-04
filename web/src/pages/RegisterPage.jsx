@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 
+const API_BASE = 'https://vertex-api.cursar.space';
+
 export default function RegisterPage({ onRegister, goToLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +28,11 @@ export default function RegisterPage({ onRegister, goToLogin }) {
 
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      const token = await credential.user.getIdToken();
+      await fetch(`${API_BASE}/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
       setSuccess('Conta criada com sucesso! Redirecionando...');
       setTimeout(goToLogin, 1500);
     } catch (err) {

@@ -1,5 +1,6 @@
 import { createPublicKey } from 'node:crypto';
 import jwt from 'jsonwebtoken';
+import { ensureProfile, isBlocked } from '../db/store.js';
 const { verify: jwtVerify } = jwt;
 
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'vertex-ad5da';
@@ -108,12 +109,23 @@ export async function authMiddleware(req, res, next) {
   }
 
   const token = authHeader.slice(7);
+  let decoded;
   try {
-    const decoded = await verifyToken(token);
-    req.user = { uid: decoded.uid, email: decoded.email || '' };
-    next();
+    decoded = await verifyToken(token);
   } catch (err) {
     console.error('Erro ao validar token Firebase:', err.message);
     return res.status(401).json({ error: 'Token invalido ou expirado' });
+  }
+
+  try {
+    req.user = { uid: decoded.uid, email: decoded.email || '' };
+    await ensureProfile(req.user.uid, req.user.email);
+    if (await isBlocked(req.user.uid)) {
+      return res.status(403).json({ error: 'Conta bloqueada' });
+    }
+    next();
+  } catch (err) {
+    console.error('Erro ao carregar perfil Firebase:', err.message);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 }

@@ -54,6 +54,14 @@ export default function DashboardPage({ token, user, onLogout }) {
     return v.toLocaleString('pt-BR');
   }
 
+  function formatUSD(value) {
+    return `$${Number(value || 0).toFixed(6)}`;
+  }
+
+  function formatBRL(value) {
+    return `R$${Number(value || 0).toFixed(4)}`;
+  }
+
   function formatDate(iso) {
     if (!iso) return '-';
     return new Date(iso).toLocaleString('pt-BR');
@@ -66,6 +74,10 @@ export default function DashboardPage({ token, user, onLogout }) {
     const models = (u.usage && u.usage.models) || {};
     return acc + Object.values(models).reduce((s, m) => s + (m.tokens || 0), 0);
   }, 0);
+  const totalCostBrl = users.reduce(
+    (acc, u) => acc + Number(u.summary?.totals?.costBrl || 0),
+    0
+  );
 
   return (
     <div className="admin-dashboard">
@@ -107,6 +119,10 @@ export default function DashboardPage({ token, user, onLogout }) {
                 <div className="metric-label">Tokens Totais</div>
                 <div className="metric-value">{formatTokens(totalTokens)}</div>
               </div>
+              <div className="metric-card">
+                <div className="metric-label">Custo Total BRL</div>
+                <div className="metric-value cost">{formatBRL(totalCostBrl)}</div>
+              </div>
             </div>
 
             {/* Tabela de usuarios */}
@@ -124,6 +140,8 @@ export default function DashboardPage({ token, user, onLogout }) {
                         <th>Cadastro</th>
                         <th>Ultimo Uso</th>
                         <th>Tokens</th>
+                        <th>Custo USD</th>
+                        <th>Custo BRL</th>
                         <th>Status</th>
                         <th>Acao</th>
                       </tr>
@@ -132,6 +150,7 @@ export default function DashboardPage({ token, user, onLogout }) {
                       {users.map((u) => {
                         const models = (u.usage && u.usage.models) || {};
                         const userTokens = Object.values(models).reduce((s, m) => s + (m.tokens || 0), 0);
+                        const totals = u.summary?.totals || {};
                         const lastUsed = Object.values(models)
                           .map(m => m.lastUsed)
                           .filter(Boolean)
@@ -144,6 +163,8 @@ export default function DashboardPage({ token, user, onLogout }) {
                             <td>{formatDate(u.profile?.createdAt)}</td>
                             <td>{formatDate(lastUsed)}</td>
                             <td className="tokens-cell">{formatTokens(userTokens)}</td>
+                            <td className="tokens-cell">{formatUSD(totals.costUsd)}</td>
+                            <td className="tokens-cell">{formatBRL(totals.costBrl)}</td>
                             <td>
                               <span className={`status-badge ${u.blocked ? 'blocked' : 'active'}`}>
                                 {u.blocked ? 'Bloqueado' : 'Ativo'}

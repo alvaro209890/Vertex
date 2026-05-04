@@ -145,6 +145,37 @@ def _run_auth_wizard_if_needed() -> None:
     run_login_wizard()
 
 
+def _ensure_remote_account_active() -> None:
+    """Confirm the hosted dashboard API still accepts this Firebase account."""
+    from vertex_auth import clear_auth, get_valid_token
+
+    token = get_valid_token()
+    if not token:
+        return
+
+    import urllib.error
+    import urllib.request
+
+    req = urllib.request.Request(
+        f"{VERTEX_API_URL}/me",
+        headers={"Authorization": f"Bearer {token}"},
+        method="GET",
+    )
+    try:
+        urllib.request.urlopen(req, timeout=10).close()
+    except urllib.error.HTTPError as exc:
+        if exc.code == 403:
+            print(f"{RED}Conta bloqueada. Fale com o suporte para reativar o acesso.{RESET}")
+            sys.exit(1)
+        if exc.code == 401:
+            clear_auth()
+            print(f"{YELLOW}Sessao expirada. Faca login novamente com `vertex auth login`.{RESET}")
+            sys.exit(1)
+        print(f"{YELLOW}Aviso: nao foi possivel confirmar o status da conta ({exc.code}).{RESET}")
+    except Exception:
+        print(f"{YELLOW}Aviso: nao foi possivel confirmar o status da conta agora.{RESET}")
+
+
 def _is_auth_login_request(argv: list[str] | None = None) -> bool:
     """Return whether CLI args request Firebase login."""
     args = list(sys.argv[1:] if argv is None else argv[1:])
@@ -537,6 +568,7 @@ def cli() -> None:
 
     # Verifica autenticacao
     _run_auth_wizard_if_needed()
+    _ensure_remote_account_active()
 
     port = os.environ.get("VERTEX_PORT", "8083")
     _ensure_vertex_cli_settings(port)

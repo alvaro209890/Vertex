@@ -3,10 +3,12 @@ import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import crypto from 'node:crypto';
+import { parseUsdToBrl, summarizeUsage } from '../lib/pricing.js';
 
 const DB_PATH = process.env.DB_PATH || '/media/server/HD Backup/Servidores_NAO_MEXA/Banco_de_dados/vertex';
 const ADMIN_USER = process.env.ADMIN_USER || 'alvaro231120';
 const ADMIN_PASS = process.env.ADMIN_PASS || '785291aE';
+const usdToBrl = () => parseUsdToBrl(process.env.USD_TO_BRL);
 
 export const adminRouter = Router();
 
@@ -80,6 +82,7 @@ adminRouter.get('/users', adminAuth, async (req, res) => {
         email: profile?.email || '',
         profile: profile || null,
         usage: usage || null,
+        summary: summarizeUsage(usage || { models: {} }, usdToBrl()),
         blocked,
       });
     }
@@ -130,6 +133,8 @@ adminRouter.get('/metrics', adminAuth, async (req, res) => {
       activeUsers: 0,
       blockedUsers: 0,
       totalTokens: 0,
+      totalCostUsd: 0,
+      totalCostBrl: 0,
       tokensByModel: {},
     };
 
@@ -160,6 +165,9 @@ adminRouter.get('/metrics', adminAuth, async (req, res) => {
       try {
         const usageRaw = await readFile(join(userDir, 'usage.json'), 'utf-8');
         const usage = JSON.parse(usageRaw);
+        const summary = summarizeUsage(usage, usdToBrl());
+        metrics.totalCostUsd += summary.totals.costUsd;
+        metrics.totalCostBrl += summary.totals.costBrl;
         if (usage.models) {
           for (const [model, data] of Object.entries(usage.models)) {
             const tokens = data.tokens || 0;
@@ -170,6 +178,8 @@ adminRouter.get('/metrics', adminAuth, async (req, res) => {
       } catch {}
     }
 
+    metrics.totalCostUsd = Number(metrics.totalCostUsd.toFixed(8));
+    metrics.totalCostBrl = Number(metrics.totalCostBrl.toFixed(4));
     res.json(metrics);
   } catch (err) {
     console.error('Erro ao calcular metricas:', err);

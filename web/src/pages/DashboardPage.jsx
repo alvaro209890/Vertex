@@ -15,12 +15,15 @@ export default function DashboardPage({ user, onLogout }) {
       const res = await fetch(`${API_BASE}/usage/summary`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 403) {
+        throw new Error('Conta bloqueada. Fale com o suporte para reativar o acesso.');
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json);
       setError('');
     } catch (err) {
-      setError('Nao foi possivel carregar os dados de uso.');
+      setError(err.message || 'Nao foi possivel carregar os dados de uso.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -32,15 +35,15 @@ export default function DashboardPage({ user, onLogout }) {
   }, [fetchSummary]);
 
   function formatUSD(value) {
-    return `$${value.toFixed(6)}`;
+    return `$${Number(value || 0).toFixed(6)}`;
   }
 
   function formatBRL(value) {
-    return `R$${value.toFixed(2)}`;
+    return `R$${Number(value || 0).toFixed(4)}`;
   }
 
   function formatTokens(value) {
-    return value.toLocaleString('pt-BR');
+    return Number(value || 0).toLocaleString('pt-BR');
   }
 
   return (
@@ -108,6 +111,9 @@ export default function DashboardPage({ user, onLogout }) {
                       <tr>
                         <th>Modelo</th>
                         <th>Tokens</th>
+                        <th>Entrada</th>
+                        <th>Cache Hit</th>
+                        <th>Saida</th>
                         <th>Custo (USD)</th>
                         <th>Custo (BRL)</th>
                       </tr>
@@ -117,6 +123,9 @@ export default function DashboardPage({ user, onLogout }) {
                         <tr key={row.model}>
                           <td className="model-cell">{row.model}</td>
                           <td>{formatTokens(row.tokens)}</td>
+                          <td>{formatTokens(row.inputTokens)}</td>
+                          <td>{formatTokens(row.cacheReadInputTokens)}</td>
+                          <td>{formatTokens(row.outputTokens)}</td>
                           <td>{formatUSD(row.costUsd)}</td>
                           <td>{formatBRL(row.costBrl)}</td>
                         </tr>
@@ -126,6 +135,9 @@ export default function DashboardPage({ user, onLogout }) {
                       <tr className="total-row">
                         <td><strong>Total</strong></td>
                         <td><strong>{formatTokens(data.totals.tokens)}</strong></td>
+                        <td><strong>{formatTokens(data.totals.inputTokens)}</strong></td>
+                        <td><strong>{formatTokens(data.totals.cacheReadInputTokens)}</strong></td>
+                        <td><strong>{formatTokens(data.totals.outputTokens)}</strong></td>
                         <td><strong>{formatUSD(data.totals.costUsd)}</strong></td>
                         <td><strong>{formatBRL(data.totals.costBrl)}</strong></td>
                       </tr>
