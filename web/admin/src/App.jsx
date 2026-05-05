@@ -4,12 +4,44 @@ import DashboardPage from './pages/DashboardPage';
 import './styles.css';
 
 export default function App() {
-  const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(() => localStorage.getItem('vertexAdminToken'));
+  const [user, setUser] = useState(() => localStorage.getItem('vertexAdminUser'));
+  const [sessionMessage, setSessionMessage] = useState('');
 
-  if (!token) {
-    return <LoginPage onLogin={(t, u) => { setToken(t); setUser(u); }} />;
+  function handleLogin(nextToken, nextUser) {
+    localStorage.setItem('vertexAdminToken', nextToken);
+    localStorage.setItem('vertexAdminUser', nextUser);
+    setToken(nextToken);
+    setUser(nextUser);
+    setSessionMessage('');
   }
 
-  return <DashboardPage token={token} user={user} onLogout={() => { setToken(null); setUser(null); }} />;
+  function clearSession(message = '') {
+    localStorage.removeItem('vertexAdminToken');
+    localStorage.removeItem('vertexAdminUser');
+    setToken(null);
+    setUser(null);
+    setSessionMessage(message);
+  }
+
+  function handleLogout() {
+    clearSession();
+  }
+
+  function handleUnauthorized() {
+    clearSession('Sessao admin expirada. Entre novamente para continuar.');
+  }
+
+  if (!token) {
+    return <LoginPage onLogin={handleLogin} sessionMessage={sessionMessage} />;
+  }
+
+  return (
+    <DashboardPage
+      token={token}
+      user={user}
+      onLogout={handleLogout}
+      onUnauthorized={handleUnauthorized}
+    />
+  );
 }
